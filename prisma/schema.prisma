@@ -4,96 +4,105 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
-  moduleFormat  = "cjs"
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
 }
+
 model User {
-  id                 Int       @id @default(autoincrement())
-  username           String    @unique @db.VarChar(128)
-  email              String    @unique @db.VarChar(128)
-  password           String    @db.VarChar(255)
-  isVerified         Boolean   @default(false)
-  bio                String    @default("") @db.Text
-  profile_img        String?   @db.Text
-  profile_img_id     String?   @db.Text
-  created_at         DateTime  @default(now()) @db.Timestamp
-  updated_at         DateTime  @updatedAt @db.Timestamp
-  sessions           Session[]
-  roles              UserRole[]
+  id                  Int                  @id @default(autoincrement())
+  username            String               @unique @db.VarChar(128)
+  email               String               @unique @db.VarChar(128)
+  password            String               @db.VarChar(255)
+  isVerified          Boolean              @default(false)
+  bio                 String               @default("") @db.Text
+  profile_img         String?              @db.Text
+  profile_img_id      String?              @db.Text
+  created_at          DateTime             @default(now()) @db.Timestamp
+  updated_at          DateTime             @updatedAt @db.Timestamp
+  sessions            Session[]
+  roles               UserRole[]
   passwordResetTokens PasswordResetToken[]
-  verificationTokens VerificationToken[]
+  verificationTokens  VerificationToken[]
+  reviews             Review[]
+  cart                Cart?
+  orders              Order[]
+
   @@index([username])
   @@index([email])
-
+  @@index([id])
   @@map("users")
 }
+
 model Session {
-  id              Int      @id @default(autoincrement())
-  refreshToken    String   @unique @db.Text 
-  userId          Int
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt       DateTime @db.Timestamptz
-  revokedAt       DateTime? @db.Timestamptz         
-  deviceInfo      String?  @db.Text                
-  ipAddress       String?  @db.VarChar(45)
-  createdAt       DateTime @default(now()) @db.Timestamptz
+  id           Int       @id @default(autoincrement())
+  refreshToken String    @unique @db.Text
+  userId       Int
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime  @db.Timestamptz
+  revokedAt    DateTime? @db.Timestamptz
+  deviceInfo   String?   @db.Text
+  ipAddress    String?   @db.VarChar(45)
+  createdAt    DateTime  @default(now()) @db.Timestamptz
 
   @@index([refreshToken])
   @@index([userId])
   @@index([expiresAt])
   @@index([userId, expiresAt])
 }
+
 model PasswordResetToken {
-  id          Int      @id @default(autoincrement())
-  token       String   @unique @db.Uuid
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt   DateTime @db.Timestamptz
-  used        Boolean  @default(false)
-  createdAt   DateTime @default(now()) @db.Timestamptz
+  id        Int      @id @default(autoincrement())
+  token     String   @unique @db.Uuid
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @db.Timestamptz
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz
 
   @@index([token])
   @@index([userId])
   @@index([used])
 }
+
 model VerificationToken {
-  id          Int      @id @default(autoincrement())
-  token       String   @unique @db.Uuid
-  userId      Int
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt   DateTime @db.Timestamptz
-  used        Boolean  @default(false)
-  createdAt   DateTime @default(now()) @db.Timestamptz
+  id        Int      @id @default(autoincrement())
+  token     String   @unique @db.Uuid
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @db.Timestamptz
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz
 
   @@index([token])
   @@index([userId])
 }
+
 model Role {
-  id          Int          @id @default(autoincrement())
-  name        String       @unique   
+  id   Int    @id @default(autoincrement())
+  name String @unique
 
   users       UserRole[]
   permissions RolePermission[]
 }
 
 model Permission {
-  id          Int            @id @default(autoincrement())
-  name        String         @unique   
+  id   Int    @id @default(autoincrement())
+  name String @unique
 
-  roles       RolePermission[]
+  roles RolePermission[]
 }
 
 model RolePermission {
-  roleId      Int
+  roleId       Int
   permissionId Int
 
-  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission  Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
 }
@@ -106,4 +115,306 @@ model UserRole {
   role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([userId, roleId])
+}
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(128)
+  slug        String   @unique @db.VarChar(128)
+  description String?  @db.Text
+  imageUrl    String?  @db.Text
+  createdAt   DateTime @default(now()) @db.Timestamptz
+  updatedAt   DateTime @updatedAt @db.Timestamptz
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Brand {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique @db.VarChar(128)
+  slug      String   @unique @db.VarChar(128)
+  logoUrl   String?  @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  products Product[]
+
+  @@map("brands")
+}
+
+model Product {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(255)
+  slug         String   @unique @db.VarChar(255)
+  description  String   @db.Text
+  price        Decimal  @db.Decimal(10, 2)
+  countInStock Int      @default(0)
+  rating       Decimal  @default(0) @db.Decimal(3, 2)
+  numReviews   Int      @default(0)
+  categoryId   Int
+  brandId      Int?
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+
+  category   Category         @relation(fields: [categoryId], references: [id])
+  brand      Brand?           @relation(fields: [brandId], references: [id])
+  images     ProductImage[]
+  variants   ProductVariant[]
+  reviews    Review[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([name])
+  @@map("products")
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  url       String  @db.Text
+  publicId  String? @db.Text
+  isMain    Boolean @default(false)
+  sortOrder Int     @default(0)
+  productId Int
+  variantId Int?
+
+  product Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([variantId])
+  @@map("product_images")
+}
+
+model ProductAttributeType {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(64)
+
+  values ProductAttributeValue[]
+
+  @@map("product_attribute_types")
+}
+
+model ProductAttributeValue {
+  id           Int     @id @default(autoincrement())
+  value        String  @db.VarChar(128)
+  displayName  String? @db.VarChar(128)
+  colorHex     String? @db.VarChar(7)
+  typeId       Int
+
+  type     ProductAttributeType    @relation(fields: [typeId], references: [id], onDelete: Cascade)
+  variants VariantAttributeValue[]
+
+  @@unique([typeId, value])
+  @@index([typeId])
+  @@map("product_attribute_values")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PRODUCT VARIANT (tổ hợp các attribute values)
+// ─────────────────────────────────────────────────────────────────────────
+model ProductVariant {
+  id           Int      @id @default(autoincrement())
+  productId    Int
+  sku          String?  @unique @db.VarChar(128)
+  // null = dùng giá của Product cha.
+  price        Decimal? @db.Decimal(10, 2)
+  countInStock Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  updatedAt    DateTime @updatedAt @db.Timestamptz
+
+  product         Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeValues VariantAttributeValue[]
+  images          ProductImage[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// VARIANT ↔ ATTRIBUTE VALUE (join table)
+// ─────────────────────────────────────────────────────────────────────────
+model VariantAttributeValue {
+  variantId        Int
+  attributeValueId Int
+
+  variant        ProductVariant        @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  attributeValue ProductAttributeValue @relation(fields: [attributeValueId], references: [id], onDelete: Cascade)
+
+  @@id([variantId, attributeValueId])
+  @@map("variant_attribute_values")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// REVIEW (MongoDB nhúng trong Product, SQL cần bảng riêng)
+// ─────────────────────────────────────────────────────────────────────────
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String   @db.Text
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
+  @@map("reviews")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CART
+// ─────────────────────────────────────────────────────────────────────────
+model Cart {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  paymentMethod String   @default("PayPal") @db.VarChar(64)
+  itemsPrice    Decimal  @default(0) @db.Decimal(10, 2)
+  taxPrice      Decimal  @default(0) @db.Decimal(10, 2)
+  shippingPrice Decimal  @default(0) @db.Decimal(10, 2)
+  totalPrice    Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @updatedAt @db.Timestamptz
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items          CartItem[]
+  shippingDetail ShippingDetail?
+
+  @@map("carts")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// CART ITEM (MongoDB dùng items: array, SQL cần bảng riêng)
+// ─────────────────────────────────────────────────────────────────────────
+model CartItem {
+  id           Int     @id @default(autoincrement())
+  cartId       Int
+  productId    Int
+  // null nếu sản phẩm không có biến thể.
+  variantId    Int?
+  name         String  @db.VarChar(255)
+  // Tóm tắt biến thể đã chọn, vd: "Color: Red / Size: M"
+  variantLabel String? @db.VarChar(255)
+  image        String  @db.Text
+  price        Decimal @db.Decimal(10, 2)
+  countInStock Int
+  qty          Int
+
+  cart    Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+
+  // Uniqueness được enforce ở service layer vì PostgreSQL coi NULL != NULL.
+  @@index([cartId])
+  @@index([variantId])
+  @@map("cart_items")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SHIPPING DETAIL (dùng chung cho Cart và Order)
+// ─────────────────────────────────────────────────────────────────────────
+model ShippingDetail {
+  id         Int    @id @default(autoincrement())
+  address    String @db.VarChar(255)
+  city       String @db.VarChar(128)
+  postalCode String @db.VarChar(32)
+  country    String @db.VarChar(128)
+  cartId     Int?   @unique
+  orderId    Int?   @unique
+
+  cart  Cart?  @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("shipping_details")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ORDER STATUS
+// ─────────────────────────────────────────────────────────────────────────
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ORDER
+// ─────────────────────────────────────────────────────────────────────────
+model Order {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  paymentMethod String      @db.VarChar(64)
+  itemsPrice    Decimal     @db.Decimal(10, 2)
+  taxPrice      Decimal     @db.Decimal(10, 2)
+  shippingPrice Decimal     @db.Decimal(10, 2)
+  totalPrice    Decimal     @db.Decimal(10, 2)
+  status        OrderStatus @default(PENDING)
+  paidAt        DateTime?   @db.Timestamptz
+  shippedAt     DateTime?   @db.Timestamptz
+  deliveredAt   DateTime?   @db.Timestamptz
+  cancelledAt   DateTime?   @db.Timestamptz
+  cancelReason  String?     @db.Text
+  createdAt     DateTime    @default(now()) @db.Timestamptz
+  updatedAt     DateTime    @updatedAt @db.Timestamptz
+
+  user           User            @relation(fields: [userId], references: [id])
+  orderItems     OrderItem[]
+  shippingDetail ShippingDetail?
+  paymentResult  PaymentResult?
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// ORDER ITEM (MongoDB dùng orderItems: array, SQL cần bảng riêng)
+// ─────────────────────────────────────────────────────────────────────────
+model OrderItem {
+  id           Int     @id @default(autoincrement())
+  orderId      Int
+  productId    Int
+  variantId    Int?
+  name         String  @db.VarChar(255)
+  variantLabel String? @db.VarChar(255)
+  qty          Int
+  image        String  @db.Text
+  price        Decimal @db.Decimal(10, 2)
+
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product         @relation(fields: [productId], references: [id])
+  variant ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@index([variantId])
+  @@map("order_items")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PAYMENT RESULT (MongoDB nhúng trong Order)
+// ─────────────────────────────────────────────────────────────────────────
+model PaymentResult {
+  id           Int     @id @default(autoincrement())
+  orderId      Int     @unique
+  externalId   String  @db.VarChar(255)
+  status       String  @db.VarChar(64)
+  updateTime   String  @db.VarChar(64)
+  emailAddress String  @db.VarChar(255)
+  provider     String? @db.VarChar(64)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payment_results")
 }
