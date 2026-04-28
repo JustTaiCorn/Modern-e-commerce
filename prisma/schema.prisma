@@ -198,11 +198,11 @@ model ProductAttributeType {
 }
 
 model ProductAttributeValue {
-  id           Int     @id @default(autoincrement())
-  value        String  @db.VarChar(128)
-  displayName  String? @db.VarChar(128)
-  colorHex     String? @db.VarChar(7)
-  typeId       Int
+  id          Int     @id @default(autoincrement())
+  value       String  @db.VarChar(128)
+  displayName String? @db.VarChar(128)
+  colorHex    String? @db.VarChar(7)
+  typeId      Int
 
   type     ProductAttributeType    @relation(fields: [typeId], references: [id], onDelete: Cascade)
   variants VariantAttributeValue[]
@@ -219,14 +219,13 @@ model ProductVariant {
   id           Int      @id @default(autoincrement())
   productId    Int
   sku          String?  @unique @db.VarChar(128)
-  // null = dùng giá của Product cha.
   price        Decimal? @db.Decimal(10, 2)
   countInStock Int      @default(0)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now()) @db.Timestamptz
   updatedAt    DateTime @updatedAt @db.Timestamptz
 
-  product         Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product         Product                 @relation(fields: [productId], references: [id], onDelete: Cascade)
   attributeValues VariantAttributeValue[]
   images          ProductImage[]
   cartItems       CartItem[]
@@ -250,9 +249,6 @@ model VariantAttributeValue {
   @@map("variant_attribute_values")
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// REVIEW (MongoDB nhúng trong Product, SQL cần bảng riêng)
-// ─────────────────────────────────────────────────────────────────────────
 model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
@@ -349,9 +345,6 @@ enum OrderStatus {
   CANCELLED
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// ORDER
-// ─────────────────────────────────────────────────────────────────────────
 model Order {
   id            Int         @id @default(autoincrement())
   userId        Int
