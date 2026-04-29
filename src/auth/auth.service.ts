@@ -12,9 +12,7 @@ import { PrismaService } from 'src/prisma.service';
 import { MailService } from 'src/mail/mail.service';
 import { UsersService } from 'src/users/users.service';
 import { RegisterDto } from './dto/register.dto';
-import { UserResponseDto } from './dto/user-response.dto';
 import { hashPassword, verifyPassword } from 'src/utils/password';
-import { plainToInstance } from 'class-transformer';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -251,17 +249,41 @@ export class AuthService {
     return user;
   }
   private async generateTokens(userId: number) {
-    const payload = { sub: userId };
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        roles: {
+          select: { role: { select: { name: true } } },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const roles = user.roles.map((r) => r.role.name);
+
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      roles,
+    };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
         expiresIn: '15m',
       }),
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
-      }),
+      this.jwtService.signAsync(
+        { sub: user.id },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        },
+      ),
     ]);
 
     return { accessToken, refreshToken };
