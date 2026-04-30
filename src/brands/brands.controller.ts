@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/auth/decorators/roles.decorator';
+import { Role } from 'src/auth/enums/role.enum';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { BrandsService } from './brands.service';
@@ -26,7 +27,7 @@ export class BrandsController {
 
   @Post()
   @UseGuards(AccessTokenGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new brand (admin only)' })
   create(@Body() dto: CreateBrandDto) {
@@ -53,7 +54,7 @@ export class BrandsController {
 
   @Patch(':id')
   @UseGuards(AccessTokenGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update brand by ID (admin only)' })
   update(
@@ -65,7 +66,7 @@ export class BrandsController {
 
   @Delete(':id')
   @UseGuards(AccessTokenGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete brand by ID (admin only)' })
