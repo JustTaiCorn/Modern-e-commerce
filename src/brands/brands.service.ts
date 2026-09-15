@@ -4,13 +4,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
+import { RedisService } from 'src/redis/redis.service';
 import { slugify } from 'src/utils/slug';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 
 @Injectable()
 export class BrandsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
 
   async create(dto: CreateBrandDto) {
     const slug = dto.slug ? slugify(dto.slug) : slugify(dto.name);
@@ -26,19 +30,29 @@ export class BrandsService {
       );
     }
 
-    return this.prisma.brand.create({
+    const brand = await this.prisma.brand.create({
       data: { name: dto.name, slug, logoUrl: dto.logoUrl },
     });
-  }
 
-  findAll() {
-    return this.prisma.brand.findMany({ orderBy: { createdAt: 'desc' } });
-  }
-
-  async findOne(id: number) {
-    const brand = await this.prisma.brand.findUnique({ where: { id } });
-    if (!brand) throw new NotFoundException(`Brand #${id} not found`);
+    // ponytail: Xóa cache danh sách thương hiệu khi thêm mới
+    await this.redis.del('brands:all');
     return brand;
+  }
+
+  // ponytail: Cache danh sách thương hiệu 24h cho bộ lọc
+  findAll() {
+    return this.redis.getOrSet('brands:all', 86400, () =>
+      this.prisma.brand.findMany({ orderBy: { createdAt: 'desc' } }),
+    );
+  }
+
+  // ponytail: Cache chi tiết thương hiệu 24h
+  async findOne(id: number) {
+    return this.redis.getOrSet(`brand:${id}`, 86400, async () => {
+      const brand = await this.prisma.brand.findUnique({ where: { id } });
+      if (!brand) throw new NotFoundException(`Brand #${id} not found`);
+      return brand;
+    });
   }
 
   async findBySlug(slug: string) {
@@ -67,12 +81,17 @@ export class BrandsService {
       if (taken) throw new ConflictException('Name or slug already taken');
     }
 
-    return this.prisma.brand.update({ where: { id }, data });
+    const updated = await this.prisma.brand.update({ where: { id }, data });
+    // ponytail: Xóa cache khi cập nhật thương hiệu
+    await this.redis.del('brands:all', `brand:${id}`);
+    return updated;
   }
 
   async remove(id: number) {
     await this.findOne(id);
     await this.prisma.brand.delete({ where: { id } });
+    // ponytail: Xóa cache khi xóa thương hiệu
+    await this.redis.del('brands:all', `brand:${id}`);
     return { message: `Brand #${id} deleted successfully` };
   }
 }

@@ -12,8 +12,48 @@ export class OrdersService {
       throw new BadRequestException('No order items received.');
     }
 
+    // Aggregate required quantity by variantId and sort IDs ascending to prevent transaction deadlocks
+    const itemQtyByVariant = new Map<number, number>();
+    for (const item of dto.orderItems) {
+      itemQtyByVariant.set(
+        item.variantId,
+        (itemQtyByVariant.get(item.variantId) || 0) + item.qty,
+      );
+    }
+    const sortedVariantIds = Array.from(itemQtyByVariant.keys()).sort((a, b) => a - b);
+
     return this.prisma.$transaction(async (tx) => {
-      // Create order
+      // 1. Deduct stock atomically with conditional check (Fail-Fast)
+      for (const variantId of sortedVariantIds) {
+        const requiredQty = itemQtyByVariant.get(variantId)!;
+
+        const updateResult = await tx.productVariant.updateMany({
+          where: {
+            id: variantId,
+            countInStock: { gte: requiredQty },
+          },
+          data: {
+            countInStock: { decrement: requiredQty },
+          },
+        });
+
+        if (updateResult.count === 0) {
+          const variant = await tx.productVariant.findUnique({
+            where: { id: variantId },
+            select: { sku: true, countInStock: true },
+          });
+
+          if (!variant) {
+            throw new NotFoundException(`Product variant with ID ${variantId} not found.`);
+          }
+
+          throw new BadRequestException(
+            `Not enough stock for variant SKU: ${variant.sku}. Available: ${variant.countInStock}, requested: ${requiredQty}`,
+          );
+        }
+      }
+
+      // 2. Create order and associated details
       const order = await tx.order.create({
         data: {
           userId,
@@ -46,24 +86,6 @@ export class OrdersService {
           shippingDetail: true,
         },
       });
-
-      // Subtract variant stock
-      for (const item of dto.orderItems) {
-        const variant = await tx.productVariant.findUnique({
-          where: { id: item.variantId },
-        });
-
-        if (!variant || variant.countInStock < item.qty) {
-          throw new BadRequestException(`Not enough stock for variant SKU: ${variant?.sku}`);
-        }
-
-        await tx.productVariant.update({
-          where: { id: item.variantId },
-          data: {
-            countInStock: variant.countInStock - item.qty,
-          },
-        });
-      }
 
       return order;
     });

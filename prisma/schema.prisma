@@ -344,21 +344,22 @@ enum OrderStatus {
 }
 
 model Order {
-  id            Int         @id @default(autoincrement())
-  userId        Int
-  paymentMethod String      @db.VarChar(64)
-  itemsPrice    Decimal     @db.Decimal(10, 2)
-  taxPrice      Decimal     @db.Decimal(10, 2)
-  shippingPrice Decimal     @db.Decimal(10, 2)
-  totalPrice    Decimal     @db.Decimal(10, 2)
-  status        OrderStatus @default(PENDING)
-  paidAt        DateTime?   @db.Timestamptz
-  shippedAt     DateTime?   @db.Timestamptz
-  deliveredAt   DateTime?   @db.Timestamptz
-  cancelledAt   DateTime?   @db.Timestamptz
-  cancelReason  String?     @db.Text
-  createdAt     DateTime    @default(now()) @db.Timestamptz
-  updatedAt     DateTime    @updatedAt @db.Timestamptz
+  id             Int         @id @default(autoincrement())
+  userId         Int
+  invoiceNumber  String?     @unique @db.VarChar(64)
+  paymentMethod  String      @db.VarChar(64)
+  itemsPrice     Decimal     @db.Decimal(10, 2)
+  taxPrice       Decimal     @db.Decimal(10, 2)
+  shippingPrice  Decimal     @db.Decimal(10, 2)
+  totalPrice     Decimal     @db.Decimal(10, 2)
+  status         OrderStatus @default(PENDING)
+  paidAt         DateTime?   @db.Timestamptz
+  shippedAt      DateTime?   @db.Timestamptz
+  deliveredAt    DateTime?   @db.Timestamptz
+  cancelledAt    DateTime?   @db.Timestamptz
+  cancelReason   String?     @db.Text
+  createdAt      DateTime    @default(now()) @db.Timestamptz
+  updatedAt      DateTime    @updatedAt @db.Timestamptz
 
   user           User            @relation(fields: [userId], references: [id])
   orderItems     OrderItem[]
@@ -367,6 +368,7 @@ model Order {
 
   @@index([userId])
   @@index([status])
+  @@index([invoiceNumber])
   @@map("orders")
 }
 

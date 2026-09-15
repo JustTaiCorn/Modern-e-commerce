@@ -14,6 +14,7 @@ import { UsersService } from 'src/users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { hashPassword, verifyPassword } from 'src/utils/password';
 import { randomUUID } from 'crypto';
+import { LoginThrottlerService } from './services/login-throttler.service';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
     private readonly usersService: UsersService,
+    private readonly loginThrottler: LoginThrottlerService,
   ) {}
   async register(dto: RegisterDto) {
     const existingUser = await this.prisma.user.findFirst({
@@ -69,11 +71,21 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email);
+    const normalizedEmail = email?.trim().toLowerCase();
 
+    // 1. Kiểm tra xem tài khoản có đang bị khóa do thử sai quá nhiều lần không
+    await this.loginThrottler.checkLockout(normalizedEmail);
+
+    const user = await this.usersService.findByEmail(normalizedEmail);
+
+    // 2. Nếu không tìm thấy user hoặc sai mật khẩu -> ghi nhận lần thử sai
     if (!user || !(await verifyPassword(user.password, password))) {
+      await this.loginThrottler.recordFailedAttempt(normalizedEmail);
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    // 3. Đúng mật khẩu -> Xóa sạch bộ đếm thử sai trên Redis
+    await this.loginThrottler.resetAttempts(normalizedEmail);
 
     if (!user.isVerified) {
       throw new ForbiddenException(
