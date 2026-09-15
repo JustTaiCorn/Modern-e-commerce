@@ -12,10 +12,9 @@ import { PrismaService } from 'src/prisma.service';
 import { MailService } from 'src/mail/mail.service';
 import { UsersService } from 'src/users/users.service';
 import { RegisterDto } from './dto/register.dto';
-import { UserResponseDto } from './dto/user-response.dto';
 import { hashPassword, verifyPassword } from 'src/utils/password';
-import { plainToInstance } from 'class-transformer';
 import { randomUUID } from 'crypto';
+import { LoginThrottlerService } from './services/login-throttler.service';
 
 @Injectable()
 export class AuthService {
@@ -27,6 +26,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
     private readonly usersService: UsersService,
+    private readonly loginThrottler: LoginThrottlerService,
   ) {}
   async register(dto: RegisterDto) {
     const existingUser = await this.prisma.user.findFirst({
@@ -71,11 +71,21 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email);
+    const normalizedEmail = email?.trim().toLowerCase();
 
+    // 1. Kiểm tra xem tài khoản có đang bị khóa do thử sai quá nhiều lần không
+    await this.loginThrottler.checkLockout(normalizedEmail);
+
+    const user = await this.usersService.findByEmail(normalizedEmail);
+
+    // 2. Nếu không tìm thấy user hoặc sai mật khẩu -> ghi nhận lần thử sai
     if (!user || !(await verifyPassword(user.password, password))) {
+      await this.loginThrottler.recordFailedAttempt(normalizedEmail);
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    // 3. Đúng mật khẩu -> Xóa sạch bộ đếm thử sai trên Redis
+    await this.loginThrottler.resetAttempts(normalizedEmail);
 
     if (!user.isVerified) {
       throw new ForbiddenException(
@@ -251,17 +261,41 @@ export class AuthService {
     return user;
   }
   private async generateTokens(userId: number) {
-    const payload = { sub: userId };
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        roles: {
+          select: { role: { select: { name: true } } },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const roles = user.roles.map((r) => r.role.name);
+
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      roles,
+    };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
         expiresIn: '15m',
       }),
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
-      }),
+      this.jwtService.signAsync(
+        { sub: user.id },
+        {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        },
+      ),
     ]);
 
     return { accessToken, refreshToken };

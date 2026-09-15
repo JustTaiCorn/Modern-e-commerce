@@ -10,6 +10,8 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { UsersModule } from 'src/users/users.module';
+import { RolesGuard } from './guards/roles.guard';
+import { LoginThrottlerService } from './services/login-throttler.service';
 
 @Module({
   imports: [
@@ -22,11 +24,13 @@ import { UsersModule } from 'src/users/users.module';
   controllers: [AuthController],
   providers: [
     AuthService,
+    LoginThrottlerService,
     PrismaService,
     LocalStrategy,
     AccessTokenStrategy,
     RefreshTokenStrategy,
+    RolesGuard,
   ],
-  exports: [AuthService],
+  exports: [AuthService, RolesGuard, LoginThrottlerService],
 })
 export class AuthModule {}

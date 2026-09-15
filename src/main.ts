@@ -5,7 +5,7 @@ import * as cookieParser from 'cookie-parser';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { setupSwagger } from './config/swagger.config';
 import { TransformInterceptor } from './interceptor/transform.interceptor';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -36,17 +36,14 @@ async function bootstrap() {
 
   app.useGlobalInterceptors(new TransformInterceptor(new Reflector()));
   if (process.env.NODE_ENV !== 'production') {
-    const config = new DocumentBuilder()
-      .setTitle('Book-management API')
-      .setDescription('Book-management REST API')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
-
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api', app, document);
+    setupSwagger(app);
   }
+
   await app.listen(process.env.PORT ?? 3000);
-  console.log(`Application is running on: ${await app.getUrl()}`);
+  const appUrl = await app.getUrl();
+  console.log(`Application is running on: ${appUrl}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`Swagger documentation: ${appUrl}/api/docs`);
+  }
 }
 bootstrap();
