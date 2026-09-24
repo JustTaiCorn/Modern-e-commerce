@@ -12,6 +12,7 @@ import { CartModule } from './cart/cart.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentModule } from './payment/payment.module';
 import { RedisModule } from './redis/redis.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { RedisModule } from './redis/redis.module';
     CartModule,
     OrdersModule,
     PaymentModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
