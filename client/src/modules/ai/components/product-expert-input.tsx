@@ -40,7 +40,7 @@ export function ProductExpertInput({
           variant: 'destructive',
         });
       } else {
-        handleSubmit(e);
+        handleSubmit(e as any);
       }
     }
   };

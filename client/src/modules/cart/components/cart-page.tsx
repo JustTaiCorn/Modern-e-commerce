@@ -37,7 +37,10 @@ export function CartPage() {
         <div className="col-span-8 md:col-span-1">
           <div className="space-y-4">
             {items.map(item => (
-              <CartItem key={item.productId} item={item} />
+              <CartItem
+                key={item.variantId || item.productId}
+                item={item}
+              />
             ))}
           </div>
         </div>

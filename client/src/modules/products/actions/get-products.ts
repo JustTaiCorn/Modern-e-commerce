@@ -26,9 +26,12 @@ export async function getProducts(
       throw new Error('Failed to fetch products');
     }
 
-    const data = (await response.json()) as PaginatedResponse<Product>;
+    const json = await response.json();
+    // ponytail: bóc tách wrapper data của NestJS nếu có
+    const payload =
+      json && typeof json === 'object' && 'data' in json ? json.data : json;
 
-    return data;
+    return payload as PaginatedResponse<Product>;
   } catch (error) {
     console.error('Error fetching products:', error);
     return {

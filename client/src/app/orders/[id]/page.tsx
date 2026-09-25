@@ -15,7 +15,8 @@ export default async function OrderPage({ params }: OrderPageProps) {
   const { id } = await params;
   const response = await fetchWithAuth(`/orders/${id}`);
 
-  const order: Order = await response.json();
+  const raw = await response.json();
+  const order: Order = raw.data || raw;
 
   return (
     <Container>

@@ -5,7 +5,8 @@ import { Order } from '@apps/shared/types/order';
 
 export default async function OrderHistoryPage() {
   const response = await fetchWithAuth('/orders/myorders');
-  const orders: Order[] = await response.json();
+  const raw = await response.json();
+  const orders: Order[] = raw.data || raw || [];
 
   return (
     <Container>

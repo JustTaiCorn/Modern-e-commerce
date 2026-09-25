@@ -1,5 +1,6 @@
 'use client';
 
+// ponytail: Xử lý thao tác sản phẩm Admin hỗ trợ cả ID số lẫn string
 import { Button } from '@/components/ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -13,20 +14,22 @@ interface ProductsActionsProps {
 
 export function ProductsActions({ product }: ProductsActionsProps) {
   const router = useRouter();
+  const productId = String(product.id ?? product._id ?? '');
 
   const handleDelete = async () => {
-    if (confirm('Are you sure you want to delete this product?')) {
-      const result = await deleteProduct(product._id);
+    if (!productId) return;
+    if (confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+      const result = await deleteProduct(productId);
 
       if (result.success) {
         toast({
-          title: 'Success',
+          title: 'Thành công',
           description: result.message,
         });
       } else {
         toast({
           variant: 'destructive',
-          title: 'Error',
+          title: 'Lỗi',
           description: result.message,
         });
       }
@@ -38,7 +41,7 @@ export function ProductsActions({ product }: ProductsActionsProps) {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => router.push(`/admin/products/${product._id}/edit`)}
+        onClick={() => router.push(`/admin/products/${productId}/edit`)}
       >
         <Pencil className="h-4 w-4" />
       </Button>

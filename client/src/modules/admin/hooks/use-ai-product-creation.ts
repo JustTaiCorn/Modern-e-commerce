@@ -27,8 +27,8 @@ export function useAiProductCreation() {
           "I am a product creation assistant. Let's create a product together.",
       },
     ],
-    body: ({ messages }) => ({
-      messages,
+    body: (req: any) => ({
+      messages: req?.messages,
       data: {
         context: {
           currentStep,
@@ -53,7 +53,7 @@ export function useAiProductCreation() {
       console.error('Chat error:', error);
     },
     onFinish: message => {
-      const data = message.data;
+      const data = message.data as any;
       if (data?.productUpdate) {
         setProductDraft(prev => ({ ...prev, ...data.productUpdate }));
       }

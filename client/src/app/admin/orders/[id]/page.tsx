@@ -12,7 +12,8 @@ interface AdminOrderPageProps {
 export default async function AdminOrderPage({ params }: AdminOrderPageProps) {
   const { id } = await params;
   const response = await fetchWithAuth(`/orders/${id}`);
-  const order: Order = await response.json();
+  const json = await response.json();
+  const order: Order = json.data || json;
 
   return (
     <Container>

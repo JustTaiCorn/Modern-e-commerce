@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { userQueryConfig } from '../user-config';
 
@@ -17,6 +19,8 @@ export function useUser() {
     user,
     isLoading,
     isAuthenticated: !!user,
+    // ponytail: Thêm isAdmin helper tiện lợi
+    isAdmin: user?.roles?.includes('ADMIN') ?? false,
     error,
   };
 }

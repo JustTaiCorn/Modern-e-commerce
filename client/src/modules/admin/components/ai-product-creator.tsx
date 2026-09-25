@@ -140,17 +140,19 @@ export function AiProductCreator() {
               </div>
               {formatProductInfo(message.content)}
 
-              {message.data?.validationErrors && (
+              {(message.data as any)?.validationErrors && (
                 <ul className="mt-2 space-y-1">
-                  {message.data.validationErrors.map((error, i) => (
-                    <li
-                      key={i}
-                      className="text-destructive text-sm flex items-center gap-2"
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
-                      {error.message}
-                    </li>
-                  ))}
+                  {((message.data as any).validationErrors as any[]).map(
+                    (error: any, i: number) => (
+                      <li
+                        key={i}
+                        className="text-destructive text-sm flex items-center gap-2"
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+                        {error.message}
+                      </li>
+                    ),
+                  )}
                 </ul>
               )}
             </div>
@@ -187,7 +189,7 @@ export function AiProductCreator() {
             <Button
               type="button"
               variant="outline"
-              onClick={reload}
+              onClick={() => reload()}
               disabled={isLoading || messages.length === 0}
             >
               Retry

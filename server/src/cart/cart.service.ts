@@ -14,7 +14,9 @@ export class CartService {
           include: {
             variant: {
               include: {
-                product: true,
+                product: {
+                  include: { images: true },
+                },
               },
             },
           },
@@ -27,14 +29,16 @@ export class CartService {
       cart = await this.prisma.cart.create({
         data: {
           userId,
-          paymentMethod: 'PayPal',
+          paymentMethod: 'sepay',
         },
         include: {
           items: {
             include: {
               variant: {
                 include: {
-                  product: true,
+                  product: {
+                    include: { images: true },
+                  },
                 },
               },
             },
@@ -73,7 +77,9 @@ export class CartService {
           include: {
             variant: {
               include: {
-                product: true,
+                product: {
+                  include: { images: true },
+                },
               },
             },
           },
@@ -86,7 +92,7 @@ export class CartService {
   async addCartItem(userId: number, variantId: number, qty: number) {
     const variant = await this.prisma.productVariant.findUnique({
       where: { id: variantId },
-      include: { product: true },
+      include: { product: { include: { images: true } } },
     });
     if (!variant) throw new NotFoundException('Product variant not found');
 
@@ -101,6 +107,7 @@ export class CartService {
         data: { qty },
       });
     } else {
+      const primaryImage = variant.product.images?.[0]?.url || '';
       await this.prisma.cartItem.create({
         data: {
           cartId: cart.id,
@@ -110,7 +117,7 @@ export class CartService {
           price: variant.price,
           qty,
           countInStock: variant.countInStock,
-          image: '', // Can be extended with primary product image
+          image: primaryImage,
         },
       });
     }

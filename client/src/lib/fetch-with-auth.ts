@@ -12,17 +12,23 @@ export async function fetchWithAuth(
 ) {
   const { revalidatePaths, headers, ...rest } = config;
   const accessToken = await getAccessToken();
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/v1';
+  const fullUrl = url.startsWith('http')
+    ? url
+    : `${baseUrl}${url.startsWith('/') ? '' : '/'}${url}`;
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${url}`, {
+  // ponytail: Gửi đúng chuẩn Authorization Bearer token của NestJS
+  const response = await fetch(fullUrl, {
     ...rest,
     headers: {
+      'Content-Type': 'application/json',
       ...headers,
-      Cookie: `access_token=${accessToken}`,
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     },
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
     throw new Error(error.message || 'Request failed');
   }
 

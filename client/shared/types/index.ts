@@ -1,26 +1,64 @@
-export interface Product {
-  _id: string;
-  name: string;
-  images: string[];
-  description: string;
-  brand: string;
-  brandLogo: string;
-  category: string;
+// ponytail: Type definitions chuẩn PostgreSQL Prisma Schema, có optional aliases hỗ trợ chuyển đổi mượt mà
+export interface ProductVariant {
+  id: number;
+  productId?: number;
+  sku: string;
   price: number;
   countInStock: number;
-  rating: number;
-  numReviews: number;
-  reviews: Review[];
-  createdAt: string;
-  updatedAt: string;
+}
+
+export interface ProductImage {
+  id: number;
+  url: string;
+  isMain: boolean;
+  sortOrder?: number;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string;
+  imageUrl?: string;
+}
+
+export interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+  logoUrl?: string;
 }
 
 export interface Review {
-  name: string;
+  id?: number;
+  name?: string;
   rating: number;
   comment: string;
-  user: string;
-  createdAt: string;
+  user?: any;
+  createdAt?: string;
+}
+
+export interface Product {
+  id: number;
+  _id?: string | number; // ponytail: alias tương thích cũ
+  name: string;
+  slug?: string;
+  images: any[]; // hỗ trợ ProductImage[] hoặc string[]
+  description: string;
+  brand?: any; // Brand object hoặc string
+  brandLogo?: string;
+  category?: any; // Category object hoặc string
+  price?: number;
+  countInStock?: number;
+  rating?: number;
+  numReviews?: number;
+  reviews?: Review[];
+  variants?: ProductVariant[];
+  minPrice?: number;
+  maxPrice?: number;
+  totalStock?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PaginatedProducts {
@@ -30,17 +68,23 @@ export interface PaginatedProducts {
 }
 
 export interface User {
-  _id: string;
-  name: string;
+  id: number;
+  _id?: string | number; // ponytail: alias
+  username: string;
+  name?: string; // ponytail: alias
   email: string;
-  isAdmin: boolean;
-  createdAt: string;
-  updatedAt: string;
+  roles: string[];
+  isAdmin?: boolean; // ponytail: alias tính toán
+  isVerified?: boolean;
+  profile_img?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
+  statusCode?: number;
+  success?: boolean;
+  message?: string;
   data?: T;
 }
 
@@ -49,4 +93,4 @@ export interface PaginatedResponse<T> {
   total: number;
   page: number;
   pages: number;
-} 
+}
