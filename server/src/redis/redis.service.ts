@@ -18,10 +18,10 @@ export class RedisService implements OnApplicationShutdown {
       port,
       password,
       lazyConnect: false,
-      maxRetriesPerRequest: 3,
-      enableOfflineQueue: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
       retryStrategy: (times) => {
-        const delay = Math.min(times * 200, 2000);
+        const delay = Math.min(times * 500, 5000);
         return delay;
       },
     });
@@ -113,9 +113,11 @@ export class RedisService implements OnApplicationShutdown {
     fetcher: () => Promise<T>,
   ): Promise<T> {
     try {
-      const cached = await this.client.get(key);
-      if (cached) {
-        return JSON.parse(cached) as T;
+      if (this.client.status === 'ready') {
+        const cached = await this.client.get(key);
+        if (cached) {
+          return JSON.parse(cached) as T;
+        }
       }
     } catch (error) {
       this.logger.warn(
@@ -127,7 +129,9 @@ export class RedisService implements OnApplicationShutdown {
 
     if (result !== null && result !== undefined) {
       try {
-        await this.client.set(key, JSON.stringify(result), 'EX', ttlSeconds);
+        if (this.client.status === 'ready') {
+          await this.client.set(key, JSON.stringify(result), 'EX', ttlSeconds);
+        }
       } catch (error) {
         this.logger.warn(
           `Redis set cache error on key "${key}": ${error.message}`,

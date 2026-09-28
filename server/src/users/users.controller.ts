@@ -4,6 +4,7 @@ import {
   Post,
   Body,
   Patch,
+  Put,
   Param,
   Delete,
   ParseIntPipe,
@@ -34,6 +35,12 @@ export class UsersController {
     return this.usersService.create(createUserDto);
   }
 
+  @Post('create')
+  @ApiOperation({ summary: 'Create a new staff member' })
+  createStaff(@Body() body: any) {
+    return this.usersService.createStaff(body);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Get all users' })
   findAll() {
@@ -46,9 +53,48 @@ export class UsersController {
     return this.usersService.findOne(id);
   }
 
+  @Put(':id/lock')
+  @ApiOperation({ summary: 'Lock a user account' })
+  lockUser(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.lockUser(id);
+  }
+
+  @Put(':id/unlock')
+  @ApiOperation({ summary: 'Unlock a user account' })
+  unlockUser(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.unlockUser(id);
+  }
+
+  @Put(':id/roles')
+  @ApiOperation({ summary: 'Assign a role to user' })
+  assignRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { id?: number; name?: string; roleId?: number },
+  ) {
+    return this.usersService.assignRole(id, body);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update user profile' })
   update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(id, updateUserDto);
+  }
+
+  @Put('change/:id')
+  @ApiOperation({ summary: 'Update user profile (alternative route)' })
+  updateChange(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usersService.update(id, updateUserDto);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update user profile (PUT)' })
+  updatePut(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
   ) {

@@ -33,4 +33,12 @@ export class CreateCategoryDto {
   @IsOptional()
   @IsUrl()
   imageUrl?: string;
+
+  @ApiPropertyOptional({ example: 1, description: 'Parent category ID' })
+  @IsOptional()
+  parentId?: number;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  isActive?: boolean;
 }

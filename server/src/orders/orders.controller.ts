@@ -4,18 +4,16 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
-import { Roles } from 'src/auth/decorators/roles.decorator';
-import { Role } from 'src/auth/enums/role.enum';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentResultDto } from './dto/payment-result.dto';
 
 @ApiTags('Orders')
@@ -27,28 +25,92 @@ export class OrdersController {
 
   @Post()
   @ApiOperation({ summary: 'Create new order' })
-  createOrder(@Body() body: CreateOrderDto, @CurrentUser() user: any) {
-    return this.ordersService.create(body, user.userId);
+  createOrder(@Body() body: any, @CurrentUser() user: any) {
+    return this.ordersService.create(body, user?.userId);
+  }
+
+  @Post('user/:userId')
+  @ApiOperation({ summary: 'Create new order for specific user' })
+  createOrderForUser(
+    @Body() body: any,
+    @Param('userId', ParseIntPipe) paramUserId: number,
+  ) {
+    return this.ordersService.create(body, paramUserId);
   }
 
   @Get()
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Get all orders (admin only)' })
+  @ApiOperation({ summary: 'Get all orders' })
   getOrders() {
     return this.ordersService.findAll();
   }
 
   @Get('myorders')
   @ApiOperation({ summary: 'Get personal user orders' })
-  getUserOrders(@CurrentUser() user: any) {
+  getMyOrders(@CurrentUser() user: any) {
     return this.ordersService.findUserOrders(user.userId);
+  }
+
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get orders by user ID' })
+  getUserOrders(@Param('userId', ParseIntPipe) userId: number) {
+    return this.ordersService.findUserOrders(userId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get order details by ID' })
   getOrder(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.findById(id);
+  }
+
+  @Patch(':id/status')
+  @ApiOperation({ summary: 'Update order status (PATCH)' })
+  patchOrderStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('status') queryStatus?: string,
+    @Body('status') bodyStatus?: string,
+    @Body() fullBody?: any,
+  ) {
+    const status = queryStatus || bodyStatus || fullBody?.status;
+    return this.ordersService.updateStatus(id, status);
+  }
+
+  @Put(':id/status')
+  @ApiOperation({ summary: 'Update order status (PUT)' })
+  putOrderStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('status') queryStatus?: string,
+    @Body('status') bodyStatus?: string,
+    @Body() fullBody?: any,
+  ) {
+    const status = queryStatus || bodyStatus || fullBody?.status;
+    return this.ordersService.updateStatus(id, status);
+  }
+
+  @Patch(':id/cancel')
+  @ApiOperation({ summary: 'Cancel order (PATCH)' })
+  patchCancelOrder(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('reason') reason?: string,
+  ) {
+    return this.ordersService.cancelOrder(id, reason);
+  }
+
+  @Put(':id/cancel')
+  @ApiOperation({ summary: 'Cancel order (PUT)' })
+  putCancelOrder(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('reason') reason?: string,
+  ) {
+    return this.ordersService.cancelOrder(id, reason);
+  }
+
+  @Patch(':userId/:id/cancel')
+  @ApiOperation({ summary: 'Cancel order with userId in route (PATCH)' })
+  patchCancelOrderWithUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('reason') reason?: string,
+  ) {
+    return this.ordersService.cancelOrder(id, reason);
   }
 
   @Put(':id/pay')
@@ -61,9 +123,7 @@ export class OrdersController {
   }
 
   @Put(':id/deliver')
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Mark order as delivered (admin only)' })
+  @ApiOperation({ summary: 'Mark order as delivered' })
   updateOrderDelivery(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.updateDelivered(id);
   }

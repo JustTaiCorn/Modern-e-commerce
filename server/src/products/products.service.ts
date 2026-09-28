@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { CloudinaryService } from '../cloudinary/services/cloudinary.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import {
@@ -15,6 +16,7 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
   async findMany(query: QueryProductDto) {
@@ -268,5 +270,126 @@ export class ProductsService {
     // ponytail: Xóa cache khi xóa sản phẩm
     await this.redis.del(`product:${id}`);
     return { success: true };
+  }
+
+  async uploadImages(productId: number, files: Express.Multer.File[]) {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    if (!files || files.length === 0) {
+      return { message: 'No files uploaded' };
+    }
+
+    const uploadedImages: any[] = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const uploadResult = await this.cloudinary.uploadImage(file);
+      const url = (uploadResult as any).secure_url || uploadResult.url;
+      const publicId = (uploadResult as any).public_id;
+
+      const img = await this.prisma.productImage.create({
+        data: {
+          productId,
+          url,
+          publicId,
+          isMain: i === 0,
+          sortOrder: i,
+        },
+      });
+      uploadedImages.push(img);
+    }
+
+    await this.redis.del(`product:${productId}`);
+    return uploadedImages;
+  }
+
+  // --- Inventory management ---
+
+  async getVariantsByProduct(productId: number) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, name: true },
+    });
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    const variants = await this.prisma.productVariant.findMany({
+      where: { productId },
+      include: {
+        attributeValues: {
+          include: {
+            attributeValue: {
+              include: { type: true },
+            },
+          },
+        },
+      },
+      orderBy: { id: 'asc' },
+    });
+
+    // Build inventory-style response that client inventoryStore expects
+    return variants.map((variant) => {
+      const colorAv = variant.attributeValues.find(
+        (av) => av.attributeValue.type?.name?.toLowerCase() === 'color' || av.attributeValue.colorHex,
+      );
+      const sizeAv = variant.attributeValues.find(
+        (av) => av.attributeValue.type?.name?.toLowerCase() === 'size' || !av.attributeValue.colorHex,
+      );
+
+      return {
+        id: variant.id,
+        quantity: variant.countInStock,
+        productVariant: {
+          id: variant.id,
+          sku: variant.sku,
+          price: variant.price,
+          product: { id: product.id, name: product.name, sku: '' },
+          color: colorAv
+            ? {
+                id: colorAv.attributeValue.id,
+                name: colorAv.attributeValue.displayName || colorAv.attributeValue.value,
+                code: colorAv.attributeValue.colorHex || '#000000',
+              }
+            : null,
+          size: sizeAv
+            ? {
+                id: sizeAv.attributeValue.id,
+                name: sizeAv.attributeValue.displayName || sizeAv.attributeValue.value,
+                code: sizeAv.attributeValue.value,
+              }
+            : null,
+        },
+      };
+    });
+  }
+
+  async updateVariantStock(variantId: number, quantity: number) {
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id: variantId },
+    });
+    if (!variant) {
+      throw new NotFoundException(`Variant with ID ${variantId} not found`);
+    }
+
+    const updated = await this.prisma.productVariant.update({
+      where: { id: variantId },
+      data: { countInStock: quantity },
+    });
+
+    // Xóa cache sản phẩm liên quan
+    await this.redis.del(`product:${variant.productId}`);
+
+    return {
+      id: updated.id,
+      quantity: updated.countInStock,
+      productVariant: {
+        id: updated.id,
+        sku: updated.sku,
+        price: updated.price,
+      },
+    };
   }
 }

@@ -32,7 +32,10 @@ export class CategoriesService {
         slug,
         description: dto.description,
         imageUrl: dto.imageUrl,
+        parentId: dto.parentId ? Number(dto.parentId) : undefined,
+        isActive: dto.isActive !== undefined ? Boolean(dto.isActive) : true,
       },
+      include: { parent: true, children: true },
     });
 
     // ponytail: Xóa cache danh sách danh mục khi thêm mới
@@ -40,24 +43,33 @@ export class CategoriesService {
     return category;
   }
 
-  // ponytail: Cache danh sách danh mục 24h cho menu/header
+  // ponytail: Cache danh sách danh mục
   findAll() {
-    return this.redis.getOrSet('categories:all', 86400, () =>
-      this.prisma.category.findMany({ orderBy: { createdAt: 'desc' } }),
+    return this.redis.getOrSet('categories:all', 300, () =>
+      this.prisma.category.findMany({
+        include: { parent: true, children: true },
+        orderBy: { createdAt: 'desc' },
+      }),
     );
   }
 
   // ponytail: Cache chi tiết danh mục 24h
   async findOne(id: number) {
     return this.redis.getOrSet(`category:${id}`, 86400, async () => {
-      const category = await this.prisma.category.findUnique({ where: { id } });
+      const category = await this.prisma.category.findUnique({
+        where: { id },
+        include: { parent: true, children: true },
+      });
       if (!category) throw new NotFoundException(`Category #${id} not found`);
       return category;
     });
   }
 
   async findBySlug(slug: string) {
-    const category = await this.prisma.category.findUnique({ where: { slug } });
+    const category = await this.prisma.category.findUnique({
+      where: { slug },
+      include: { parent: true, children: true },
+    });
     if (!category) throw new NotFoundException(`Category "${slug}" not found`);
     return category;
   }
@@ -82,7 +94,21 @@ export class CategoriesService {
       if (taken) throw new ConflictException('Name or slug already taken');
     }
 
-    const updated = await this.prisma.category.update({ where: { id }, data });
+    const updated = await this.prisma.category.update({
+      where: { id },
+      data: {
+        ...data,
+        parentId:
+          data.parentId !== undefined
+            ? data.parentId
+              ? Number(data.parentId)
+              : null
+            : undefined,
+        isActive:
+          data.isActive !== undefined ? Boolean(data.isActive) : undefined,
+      },
+      include: { parent: true, children: true },
+    });
     // ponytail: Xóa cache khi cập nhật danh mục
     await this.redis.del('categories:all', `category:${id}`);
     return updated;

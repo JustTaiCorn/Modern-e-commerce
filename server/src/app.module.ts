@@ -13,6 +13,11 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentModule } from './payment/payment.module';
 import { RedisModule } from './redis/redis.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { AddressesModule } from './addresses/addresses.module';
+import { CouponsModule } from './coupons/coupons.module';
+import { ColorsModule } from './colors/colors.module';
+import { SizesModule } from './sizes/sizes.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -31,6 +36,11 @@ import { ReviewsModule } from './reviews/reviews.module';
     OrdersModule,
     PaymentModule,
     ReviewsModule,
+    AddressesModule,
+    CouponsModule,
+    ColorsModule,
+    SizesModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

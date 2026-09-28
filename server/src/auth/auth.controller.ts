@@ -47,17 +47,17 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const user = req.user as { id: number; email: string };
-    const tokens = await this.authService.login(
-      user,
-      req.headers['user-agent'],
-      req.ip,
-    );
+    const [tokens, fullUser] = await Promise.all([
+      this.authService.login(user, req.headers['user-agent'], req.ip),
+      this.authService.getProfile(user.id),
+    ]);
 
     const { name, options } = cookieConfig.refresh;
     res.cookie(name, tokens.refreshToken, options);
 
     return {
       accessToken: tokens.accessToken,
+      user: fullUser,
     };
   }
 

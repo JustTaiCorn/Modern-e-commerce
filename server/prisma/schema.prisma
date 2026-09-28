@@ -18,6 +18,9 @@ model User {
   username            String               @unique @db.VarChar(128)
   email               String               @unique @db.VarChar(128)
   password            String               @db.VarChar(255)
+  fullName            String?              @db.VarChar(128)
+  phone               String?              @db.VarChar(32)
+  isActive            Boolean              @default(true)
   isVerified          Boolean              @default(false)
   bio                 String               @default("") @db.Text
   profile_img         String?              @db.Text
@@ -31,6 +34,7 @@ model User {
   reviews             Review[]
   cart                Cart?
   orders              Order[]
+  addresses           Address[]
 
   @@index([username])
   @@index([email])
@@ -117,16 +121,21 @@ model UserRole {
   @@id([userId, roleId])
 }
 model Category {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique @db.VarChar(128)
-  slug        String   @unique @db.VarChar(128)
-  description String?  @db.Text
-  imageUrl    String?  @db.Text
-  createdAt   DateTime @default(now()) @db.Timestamptz
-  updatedAt   DateTime @updatedAt @db.Timestamptz
+  id          Int        @id @default(autoincrement())
+  name        String     @unique @db.VarChar(128)
+  slug        String     @unique @db.VarChar(128)
+  description String?    @db.Text
+  imageUrl    String?    @db.Text
+  parentId    Int?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now()) @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @db.Timestamptz
 
+  parent   Category?  @relation("CategoryParentChild", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryParentChild")
   products Product[]
 
+  @@index([parentId])
   @@map("categories")
 }
 
@@ -336,6 +345,9 @@ model ShippingDetail {
 // ─────────────────────────────────────────────────────────────────────────
 enum OrderStatus {
   PENDING
+  NEW
+  CONFIRMED
+  PACKING
   PAID
   PROCESSING
   SHIPPED
@@ -410,4 +422,49 @@ model PaymentResult {
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("payment_results")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// USER ADDRESS
+// ─────────────────────────────────────────────────────────────────────────
+model Address {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  fullName  String?  @db.VarChar(128)
+  phone     String?  @db.VarChar(32)
+  street    String   @db.VarChar(255)
+  ward      String?  @db.VarChar(128)
+  district  String?  @db.VarChar(128)
+  province  String?  @db.VarChar(128)
+  country   String?  @default("Vietnam") @db.VarChar(128)
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// COUPON / VOUCHER
+// ─────────────────────────────────────────────────────────────────────────
+model Coupon {
+  id             Int       @id @default(autoincrement())
+  code           String    @unique @db.VarChar(64)
+  name           String    @db.VarChar(128)
+  description    String?   @db.Text
+  value          Decimal   @db.Decimal(10, 2)
+  maxUses        Int?
+  maxUsesPerUser Int?
+  minOrderTotal  Decimal?  @db.Decimal(10, 2)
+  startsAt       DateTime? @db.Timestamptz
+  endsAt         DateTime? @db.Timestamptz
+  isActive       Boolean   @default(true)
+  imageUrl       String?   @db.Text
+  createdAt      DateTime  @default(now()) @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @db.Timestamptz
+
+  @@map("coupons")
 }

@@ -1,33 +1,32 @@
-'use client';
+"use client";
 
-import { useUser } from '@/modules/auth/hooks/use-user';
-import { redirect } from 'next/navigation';
-import { Container } from '@/components/ui/container';
-import { Loader2 } from 'lucide-react';
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/ui/app-sidebar";
+import { Separator } from "@/components/ui/separator";
+import AuthProvider from "@/components/providers/AuthProvider";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading, error } = useUser();
-
-  if (isLoading) {
-    return (
-      <Container>
-        <div className="h-[calc(100vh-5rem)] flex items-center justify-center space-y-6">
-          <div className="flex items-center justify-center gap-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="text-lg">Loading users...</p>
-          </div>
-        </div>
-      </Container>
-    );
-  }
-
-  if (!user?.isAdmin || error) {
-    redirect('/login');
-  }
-
-  return children;
+  return (
+    <AuthProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className="bg-slate-50/50 dark:bg-background min-h-screen">
+          <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b bg-background/95 px-6 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="h-4" />
+              <span className="text-sm font-medium text-foreground">
+                Hệ thống Quản trị ATINO
+              </span>
+            </div>
+          </header>
+          <main className="flex-1 p-6">{children}</main>
+        </SidebarInset>
+      </SidebarProvider>
+    </AuthProvider>
+  );
 }

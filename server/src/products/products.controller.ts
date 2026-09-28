@@ -9,9 +9,13 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Query,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from 'src/auth/enums/role.enum';
@@ -48,6 +52,20 @@ export class ProductsController {
     return this.productsService.create(dto);
   }
 
+  @Post(':id/upload-image')
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @UseInterceptors(FilesInterceptor('files'))
+  @ApiOperation({ summary: 'Upload product images (admin only)' })
+  uploadImage(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.productsService.uploadImages(id, files);
+  }
+
+  @Put(':id')
   @Patch(':id')
   @UseGuards(AccessTokenGuard, RolesGuard)
   @Roles(Role.ADMIN)
@@ -68,5 +86,28 @@ export class ProductsController {
   @ApiOperation({ summary: 'Delete product by ID (admin only)' })
   delete(@Param('id', ParseIntPipe) id: number) {
     return this.productsService.delete(id);
+  }
+
+  // --- Inventory ---
+
+  @Get(':id/variants')
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get variants with stock for a product (admin only)' })
+  getVariantsByProduct(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.getVariantsByProduct(id);
+  }
+
+  @Patch('variants/:variantId/stock')
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update stock count for a variant (admin only)' })
+  updateVariantStock(
+    @Param('variantId', ParseIntPipe) variantId: number,
+    @Body() body: { quantity: number },
+  ) {
+    return this.productsService.updateVariantStock(variantId, body.quantity);
   }
 }

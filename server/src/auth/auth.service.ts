@@ -29,9 +29,13 @@ export class AuthService {
     private readonly loginThrottler: LoginThrottlerService,
   ) {}
   async register(dto: RegisterDto) {
+    const username =
+      dto.username?.trim() ||
+      dto.email.split('@')[0] + '_' + Math.floor(1000 + Math.random() * 9000);
+
     const existingUser = await this.prisma.user.findFirst({
       where: {
-        OR: [{ email: dto.email }, { username: dto.username }],
+        OR: [{ email: dto.email }, { username }],
       },
     });
 
@@ -44,9 +48,12 @@ export class AuthService {
     const hashedPassword = await hashPassword(dto.password);
     const user = await this.prisma.user.create({
       data: {
-        username: dto.username,
+        username,
         email: dto.email,
         password: hashedPassword,
+        fullName: dto.fullName || username,
+        phone: dto.phone,
+        isActive: true,
       },
     });
 
@@ -86,6 +93,12 @@ export class AuthService {
 
     // 3. Đúng mật khẩu -> Xóa sạch bộ đếm thử sai trên Redis
     await this.loginThrottler.resetAttempts(normalizedEmail);
+
+    if (user.isActive === false) {
+      throw new ForbiddenException(
+        'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.',
+      );
+    }
 
     if (!user.isVerified) {
       throw new ForbiddenException(
@@ -248,17 +261,22 @@ export class AuthService {
         roles: {
           select: {
             role: {
-              select: { name: true },
+              select: { id: true, name: true },
             },
           },
         },
+        addresses: true,
       },
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-    return user;
+    const { password: _password, ...safeUser } = user;
+    return {
+      ...safeUser,
+      roles: user.roles.map((r) => r.role),
+    };
   }
   private async generateTokens(userId: number) {
     const user = await this.prisma.user.findUnique({
