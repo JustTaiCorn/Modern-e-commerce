@@ -199,7 +199,7 @@ export default function AdminDashboardPage() {
                 </div>
               </CardHeader>
               <CardContent className="pt-1">
-                <div className="text-2xl sm:text-3xl font-bold font-mono tracking-tight text-foreground tabular-nums">
+                <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground tabular-nums">
                   {stat.value}
                 </div>
                 <div className="flex items-center gap-1.5 mt-2 text-xs">
@@ -262,14 +262,14 @@ export default function AdminDashboardPage() {
                             {order.customerName || "Khách mua lẻ"}
                           </p>
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-                            <span className="font-mono">#{order.code}</span>
+                            <span>#{order.code}</span>
                             <span>·</span>
                             <span>{order.products} món</span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-sm font-bold font-mono text-foreground">
+                        <p className="text-sm font-bold text-foreground">
                           {formatPrice(order.discountedTotal || order.total)}
                         </p>
                         <div className="mt-0.5 scale-90 origin-right">
@@ -363,7 +363,7 @@ export default function AdminDashboardPage() {
                 {recentOrders.length > 0 ? (
                   recentOrders.map((order) => (
                     <TableRow key={order.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-mono text-xs font-bold text-foreground">
+                      <TableCell className="text-xs font-bold text-foreground">
                         #{order.code}
                       </TableCell>
                       <TableCell>
@@ -376,13 +376,13 @@ export default function AdminDashboardPage() {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-mono text-sm">
+                      <TableCell className="text-center text-sm font-medium">
                         {order.products}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm text-muted-foreground line-through decoration-muted-foreground/60">
+                      <TableCell className="text-right text-sm text-muted-foreground line-through decoration-muted-foreground/60">
                         {formatPrice(order.total)}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm font-bold text-foreground">
+                      <TableCell className="text-right text-sm font-bold text-foreground">
                         {formatPrice(order.discountedTotal || order.total)}
                       </TableCell>
                       <TableCell className="text-center">

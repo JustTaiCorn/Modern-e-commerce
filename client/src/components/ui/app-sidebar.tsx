@@ -204,22 +204,17 @@ export function AppSidebar() {
     <>
       <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
         {/* Brand Header */}
-        <SidebarHeader className="border-b border-sidebar-border/60 p-3">
-          <div className="flex items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-black text-sm shadow-sm ring-1 ring-border/40">
-              A
-            </div>
-            <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
-              <div className="flex items-center gap-1.5 font-bold tracking-tight text-foreground text-sm leading-none">
-                <span>ATINO STORE</span>
-                <span className="rounded bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300">
-                  Admin
-                </span>
-              </div>
-              <span className="text-[11px] text-muted-foreground truncate mt-1">
-                Hệ thống Quản trị
+        <SidebarHeader className="border-b border-sidebar-border/60 h-14 flex justify-center px-4">
+          <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
+            <div className="flex items-center gap-1.5 font-bold tracking-tight text-foreground text-sm leading-none">
+              <span>ATINO STORE</span>
+              <span className="rounded bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300">
+                Admin
               </span>
             </div>
+            <span className="text-[11px] text-muted-foreground truncate mt-1">
+              Hệ thống Quản trị
+            </span>
           </div>
         </SidebarHeader>
 

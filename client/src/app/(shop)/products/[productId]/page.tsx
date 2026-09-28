@@ -64,6 +64,9 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState("description");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<Color | null>(null);
+  const [selectedSize, setSelectedSize] = useState<Size | null>(null);
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const shouldReview = searchParams.get("review");
@@ -72,13 +75,54 @@ export default function ProductDetailPage() {
     }
   }, [searchParams]);
 
-  // Extract images safely
+  // Extract images safely, prioritizing the active selected color
   const productImages = useMemo(() => {
     if (!product?.images || product.images.length === 0) return [];
-    return product.images
-      .map((img) => img.image_url || img.url || "")
+
+    const allImages = [...product.images];
+
+    if (selectedColor) {
+      // Find images specifically attached to selected color
+      const matchingColorImages = allImages.filter((img: any) => {
+        if (img.colorId && img.colorId === selectedColor.id) return true;
+        if (img.variant?.attributeValues) {
+          return img.variant.attributeValues.some(
+            (av: any) =>
+              (av.attributeValueId || av.attributeValue?.id || av.id) ===
+              selectedColor.id
+          );
+        }
+        return false;
+      });
+
+      // Images not bound to any specific color (general images)
+      const generalImages = allImages.filter(
+        (img: any) => !img.variantId && !img.colorId
+      );
+
+      // Images belonging to other colors
+      const otherColorImages = allImages.filter(
+        (img: any) =>
+          (img.variantId || img.colorId) && !matchingColorImages.includes(img)
+      );
+
+      // If we have photos for this color, put them first, then general photos, then other colors
+      if (matchingColorImages.length > 0) {
+        return [...matchingColorImages, ...generalImages, ...otherColorImages]
+          .map((img: any) => img.image_url || img.url || "")
+          .filter((url): url is string => Boolean(url));
+      }
+    }
+
+    return allImages
+      .map((img: any) => img.image_url || img.url || "")
       .filter((url): url is string => Boolean(url));
-  }, [product]);
+  }, [product, selectedColor]);
+
+  // When selected color changes, reset gallery to first image
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [selectedColor?.id]);
 
   // Extract available colors with full fallback support
   const availableColors = useMemo(() => {
@@ -126,10 +170,6 @@ export default function ProductDetailPage() {
     });
     return Array.from(map.values());
   }, [product]);
-
-  const [selectedColor, setSelectedColor] = useState<Color | null>(null);
-  const [selectedSize, setSelectedSize] = useState<Size | null>(null);
-  const [quantity, setQuantity] = useState(1);
 
   // Auto-select first available color & size on load
   useEffect(() => {
@@ -191,7 +231,7 @@ export default function ProductDetailPage() {
   const selectedStock = useMemo(() => {
     if (!selectedVariant) return (product as any)?.totalStock ?? 100;
     return (
-      selectedVariant.countInStock ??
+      (selectedVariant as any).countInStock ??
       variantQuantityMap[selectedVariant.id] ??
       100
     );
@@ -235,7 +275,7 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (availableSizes.length > 0 && !selectedSize) {
       toast.error("Vui lòng chọn kích cỡ");
       return;
@@ -259,9 +299,13 @@ export default function ProductDetailPage() {
       return;
     }
 
-    addToCart(selectedVariant, quantity);
-    toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
-    setQuantity(1);
+    try {
+      await addToCart(selectedVariant, quantity);
+      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+      setQuantity(1);
+    } catch {
+      // store đã tự toast.error rồi, không làm gì thêm
+    }
   };
 
   const handleBuyNow = async () => {
@@ -416,26 +460,48 @@ export default function ProductDetailPage() {
             {/* Thumbnail Ribbon */}
             {productImages.length > 1 && (
               <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
-                {productImages.map((img, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setSelectedImageIndex(idx)}
-                    className={`relative size-20 sm:size-24 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200 ${
-                      selectedImageIndex === idx
-                        ? "border-primary ring-2 ring-primary/20 scale-102"
-                        : "border-border/60 hover:border-foreground/40 opacity-70 hover:opacity-100"
-                    }`}
-                  >
-                    <Image
-                      src={img}
-                      alt={`Thumbnail ${idx + 1}`}
-                      fill
-                      className="object-cover"
-                      unoptimized={img.includes("cloudinary")}
-                    />
-                  </button>
-                ))}
+                {productImages.map((img, idx) => {
+                  const matchedImg = product?.images?.find(
+                    (item: any) => (item.image_url || item.url) === img
+                  );
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setSelectedImageIndex(idx);
+                        if (matchedImg?.colorId && availableColors.length > 0) {
+                          const targetColor = availableColors.find(
+                            (c) => c.id === matchedImg.colorId
+                          );
+                          if (targetColor && targetColor.id !== selectedColor?.id) {
+                            setSelectedColor(targetColor);
+                          }
+                        }
+                      }}
+                      className={`group relative size-20 sm:size-24 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200 ${
+                        selectedImageIndex === idx
+                          ? "border-primary ring-2 ring-primary/20 scale-102"
+                          : "border-border/60 hover:border-foreground/40 opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      <Image
+                        src={img}
+                        alt={`Thumbnail ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                        unoptimized={img.includes("cloudinary")}
+                      />
+                      {matchedImg?.colorCode && (
+                        <span
+                          className="absolute bottom-1.5 right-1.5 size-3 rounded-full border border-white shadow-xs"
+                          style={{ backgroundColor: matchedImg.colorCode }}
+                          title={matchedImg.colorName || undefined}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
 

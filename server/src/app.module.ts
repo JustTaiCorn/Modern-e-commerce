@@ -18,6 +18,7 @@ import { CouponsModule } from './coupons/coupons.module';
 import { ColorsModule } from './colors/colors.module';
 import { SizesModule } from './sizes/sizes.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { InventoriesModule } from './inventories/inventories.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     ColorsModule,
     SizesModule,
     DashboardModule,
+    InventoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

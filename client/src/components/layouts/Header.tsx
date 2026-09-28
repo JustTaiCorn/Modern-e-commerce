@@ -1,8 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, Menu, X, Phone, Mail, User, Headphones, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Search,
+  Menu,
+  X,
+  Phone,
+  Mail,
+  User,
+  Headphones,
+  ShieldCheck,
+  LogIn,
+  UserPlus,
+  LogOut,
+  Package,
+  Sparkles,
+  ArrowRight,
+} from "lucide-react";
 import { CartSheet } from "@/components/common/CartSheet";
 import {
   NavigationMenu,
@@ -12,50 +28,123 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import { useCategoryStore } from "@/stores/categoryStore";
+import { Category } from "@/types";
 import Logo from "../common/Logo";
 import SearchBar from "../common/SearchBar";
 
-const ListItem = ({
-  className,
-  title,
-  children,
-  href,
-  ...props
-}: {
-  className?: string;
-  title: string;
-  children?: React.ReactNode;
-  href: string;
-}) => {
+const ListItem = React.forwardRef<
+  React.ElementRef<typeof Link>,
+  React.ComponentPropsWithoutRef<typeof Link> & { title: string }
+>(({ className, title, children, href, ...props }, ref) => {
   return (
     <li>
       <NavigationMenuLink asChild>
         <Link
+          ref={ref}
           href={href}
           className={cn(
-            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+            "block select-none space-y-1 rounded-xl p-3 leading-none no-underline outline-none transition-all hover:bg-muted/80 focus:bg-muted/80 group",
             className
           )}
           {...props}
         >
-          <div className="text-sm font-semibold uppercase leading-none">{title}</div>
-          <p className="line-clamp-2 text-xs leading-snug text-muted-foreground mt-1">
+          <div className="text-sm font-semibold leading-none text-foreground group-hover:text-primary transition-colors">
+            {title}
+          </div>
+          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground mt-1.5 font-normal">
             {children}
           </p>
         </Link>
       </NavigationMenuLink>
     </li>
   );
+});
+ListItem.displayName = "ListItem";
+
+const getCategoryDescription = (child: Category, parentName?: string): string => {
+  if (
+    child.description &&
+    child.description.trim() &&
+    child.description.trim().toLowerCase() !== child.name.trim().toLowerCase()
+  ) {
+    return child.description;
+  }
+
+  const slug = (child.slug || "").toLowerCase();
+  const name = (child.name || "").toLowerCase();
+
+  if (slug.includes("thun") || name.includes("thun")) {
+    return "Cotton compact cao cấp 100% thoáng mát, thấm hút mồ hôi tối ưu";
+  }
+  if (slug.includes("polo") || name.includes("polo")) {
+    return "Dệt pique thanh lịch, cổ bẻ đứng form tôn dáng nam tính chuẩn mực";
+  }
+  if (slug.includes("so-mi") || name.includes("sơ mi")) {
+    return "Chống nhăn công sở, chất liệu Oxford & lụa mềm mại sang trọng";
+  }
+  if (slug.includes("khoac") || name.includes("khoác")) {
+    return "Bomber, gió dù 2 lớp chống gió nước, phong cách trẻ trung năng động";
+  }
+  if (slug.includes("jeans") || name.includes("jeans")) {
+    return "Denim co giãn thoải mái, form slimfit & regular tôn dáng thời thượng";
+  }
+  if (slug.includes("kaki") || name.includes("kaki")) {
+    return "Chino cao cấp mềm êm, phom ôm nhẹ lịch lãm nơi công sở và dạo phố";
+  }
+  if (slug.includes("short") || name.includes("short") || name.includes("sooc")) {
+    return "Năng động, thoáng nhẹ và co giãn linh hoạt cho ngày hè thoải mái";
+  }
+  if (slug.includes("tay") || name.includes("tây") || name.includes("au") || name.includes("âu")) {
+    return "May đo cao cấp, cạp tăng đơ co giãn thông minh, chuẩn phom quý ông";
+  }
+  if (
+    slug.includes("that-lung") ||
+    name.includes("thắt lưng") ||
+    name.includes("day-nit") ||
+    name.includes("dây nịt")
+  ) {
+    return "Da bò thật nguyên tấm, mặt khóa kim loại tự động tinh xảo bền bỉ";
+  }
+  if (slug.includes("vi-da") || name.includes("ví") || name.includes("bóp")) {
+    return "Thiết kế nhỏ gọn nhiều ngăn, chất da cao cấp chống xước tiện dụng";
+  }
+  if (slug.includes("giay") || name.includes("giày")) {
+    return "Giày da bò êm chân và sneaker trẻ trung dẫn đầu xu hướng thời trang";
+  }
+  if (slug.includes("tat") || name.includes("vớ")) {
+    return "Khử mùi kháng khuẩn, sợi tre tự nhiên mềm mịn và êm ái";
+  }
+
+  return `Bộ sưu tập ${child.name} thiết kế mới nhất với chất liệu cao cấp và phom dáng chuẩn`;
 };
 
 export default function Header() {
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const { authUser, isAdminOrStaff } = useAuthStore();
+  const { authUser, isAdminOrStaff, logout } = useAuthStore();
   const { categories, fetchCategories } = useCategoryStore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/user/login");
+  };
 
   useEffect(() => {
     fetchCategories();
@@ -156,26 +245,48 @@ export default function Header() {
                     return (
                       <NavigationMenuItem key={parent.id} className="px-1">
                         <NavigationMenuTrigger className="uppercase font-bold text-sm tracking-wide">
-                          <Link
-                            href={`/categories/${parent.slug}`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {parent.name}
-                          </Link>
+                          {parent.name}
                         </NavigationMenuTrigger>
 
                         <NavigationMenuContent>
-                          <ul className="grid w-[400px] gap-2 md:w-[500px] md:grid-cols-2 p-4">
-                            {children.map((child) => (
-                              <ListItem
-                                key={child.id}
-                                title={child.name}
-                                href={`/categories/${parent.slug}/${child.slug}`}
-                              >
-                                Xem bộ sưu tập {child.name}
-                              </ListItem>
-                            ))}
-                          </ul>
+                          <div className="grid gap-3 p-4 md:w-[540px] lg:w-[640px] lg:grid-cols-[210px_1fr]">
+                            {/* Featured Parent Collection Card */}
+                            <div className="h-full">
+                              <NavigationMenuLink asChild>
+                                <Link
+                                  href={`/categories/${parent.slug}`}
+                                  className="flex h-full w-full select-none flex-col justify-end rounded-xl bg-gradient-to-b from-primary/10 via-muted/40 to-muted p-5 no-underline outline-none transition-all hover:bg-muted/80 group"
+                                >
+                                  <div className="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                                    <Sparkles className="w-4 h-4" />
+                                  </div>
+                                  <div className="mb-1 text-sm font-bold uppercase tracking-wider text-foreground">
+                                    BST {parent.name}
+                                  </div>
+                                  <p className="text-xs leading-relaxed text-muted-foreground font-normal line-clamp-3">
+                                    {parent.description ||
+                                      `Khám phá toàn bộ bộ sưu tập ${parent.name} thời trang nam cao cấp của ATINO.`}
+                                  </p>
+                                  <span className="text-xs font-bold text-primary mt-3 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                    Xem tất cả <ArrowRight className="w-3.5 h-3.5" />
+                                  </span>
+                                </Link>
+                              </NavigationMenuLink>
+                            </div>
+
+                            {/* Subcategories Grid with Meaningful Descriptions */}
+                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 list-none m-0 p-0">
+                              {children.map((child) => (
+                                <ListItem
+                                  key={child.id}
+                                  title={child.name}
+                                  href={`/categories/${parent.slug}/${child.slug}`}
+                                >
+                                  {getCategoryDescription(child, parent.name)}
+                                </ListItem>
+                              ))}
+                            </ul>
+                          </div>
                         </NavigationMenuContent>
                       </NavigationMenuItem>
                     );
@@ -212,14 +323,93 @@ export default function Header() {
               {/* Cart Drawer */}
               <CartSheet />
 
-              {/* User Account */}
-              <Link
-                href={authUser ? "/user" : "/user/login"}
-                className="p-2 hover:bg-gray-100 rounded-full text-gray-700 transition-colors"
-                title={authUser ? `Xin chào, ${authUser.fullName}` : "Đăng nhập"}
-              >
-                <User className="w-5 h-5" />
-              </Link>
+              {/* User Account Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="p-2 hover:bg-gray-100 rounded-full text-gray-700 transition-colors focus:outline-none cursor-pointer flex items-center justify-center"
+                    aria-label="Tài khoản"
+                    title={mounted && authUser ? `Xin chào, ${authUser.fullName}` : "Tài khoản"}
+                  >
+                    {mounted && authUser ? (
+                      <div className="w-6 h-6 rounded-full bg-black text-white text-[11px] font-bold flex items-center justify-center">
+                        {(authUser.fullName || "U")[0]?.toUpperCase()}
+                      </div>
+                    ) : (
+                      <User className="w-5 h-5" />
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+
+                <DropdownMenuContent align="end" className="w-56 mt-1">
+                  {mounted && authUser ? (
+                    <>
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1 py-0.5">
+                          <p className="text-sm font-semibold text-gray-900 leading-none truncate">
+                            {authUser.fullName}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {authUser.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem asChild>
+                        <Link href="/user" className="flex items-center gap-2 cursor-pointer w-full">
+                          <User className="w-4 h-4 text-gray-600" />
+                          <span>Tài khoản của tôi</span>
+                        </Link>
+                      </DropdownMenuItem>
+
+                      <DropdownMenuItem asChild>
+                        <Link href="/user/orders" className="flex items-center gap-2 cursor-pointer w-full">
+                          <Package className="w-4 h-4 text-gray-600" />
+                          <span>Đơn hàng của tôi</span>
+                        </Link>
+                      </DropdownMenuItem>
+
+                      {isAdminOrStaff() && (
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin" className="flex items-center gap-2 cursor-pointer w-full text-yellow-600 focus:text-yellow-600">
+                            <ShieldCheck className="w-4 h-4 text-yellow-600" />
+                            <span>Trang quản trị</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+
+                      <DropdownMenuSeparator />
+
+                      <DropdownMenuItem
+                        onClick={handleLogout}
+                        className="flex items-center gap-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Đăng xuất</span>
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuLabel className="text-xs text-muted-foreground font-semibold">
+                        Tài khoản
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem asChild>
+                        <Link href="/user/login" className="flex items-center gap-2 cursor-pointer w-full">
+                          <LogIn className="w-4 h-4 text-gray-600" />
+                          <span>Đăng nhập</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/user/signup" className="flex items-center gap-2 cursor-pointer w-full">
+                          <UserPlus className="w-4 h-4 text-gray-600" />
+                          <span>Đăng ký</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
               {/* Mobile menu toggle */}
               <button
@@ -301,6 +491,73 @@ export default function Header() {
               >
                 Tin tức & Chính sách
               </Link>
+
+              {/* Mobile Account Section */}
+              <div className="pt-3 border-t space-y-1">
+                {mounted && authUser ? (
+                  <>
+                    <div className="px-1 py-1 text-xs text-muted-foreground truncate">
+                      Đăng nhập bởi: <span className="font-semibold text-gray-900">{authUser.fullName}</span>
+                    </div>
+                    <Link
+                      href="/user"
+                      className="flex items-center gap-2 py-2 text-sm font-medium text-gray-700 hover:text-primary"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <User className="w-4 h-4 text-gray-500" />
+                      <span>Tài khoản của tôi</span>
+                    </Link>
+                    <Link
+                      href="/user/orders"
+                      className="flex items-center gap-2 py-2 text-sm font-medium text-gray-700 hover:text-primary"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <Package className="w-4 h-4 text-gray-500" />
+                      <span>Đơn hàng của tôi</span>
+                    </Link>
+                    {isAdminOrStaff() && (
+                      <Link
+                        href="/admin"
+                        className="flex items-center gap-2 py-2 text-sm font-medium text-yellow-600 hover:text-yellow-700"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <ShieldCheck className="w-4 h-4 text-yellow-600" />
+                        <span>Trang quản trị</span>
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="flex items-center gap-2 w-full text-left py-2 text-sm font-medium text-red-600 hover:text-red-700 cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Đăng xuất</span>
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-3 pt-1">
+                    <Link
+                      href="/user/login"
+                      className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <LogIn className="w-4 h-4" />
+                      <span>Đăng nhập</span>
+                    </Link>
+                    <span className="text-gray-300">|</span>
+                    <Link
+                      href="/user/signup"
+                      className="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:underline"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>Đăng ký</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

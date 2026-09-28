@@ -4,9 +4,11 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Image from "next/image";
 
+export type PaymentMethodType = "COD" | "SEPAY";
+
 interface PaymentMethodSelectorProps {
-  paymentMethod: "COD" | "WALLET";
-  onPaymentMethodChange: (method: "COD" | "WALLET") => void;
+  paymentMethod: PaymentMethodType;
+  onPaymentMethodChange: (method: PaymentMethodType) => void;
 }
 
 export default function PaymentMethodSelector({
@@ -17,11 +19,11 @@ export default function PaymentMethodSelector({
     <RadioGroup
       value={paymentMethod}
       onValueChange={(value: string) =>
-        onPaymentMethodChange(value as "COD" | "WALLET")
+        onPaymentMethodChange(value as PaymentMethodType)
       }
       className="space-y-3"
     >
-      {/* COD Payment */}
+      {/* COD */}
       <div
         className={`flex items-start space-x-3 rounded-lg border p-4 cursor-pointer transition-colors ${
           paymentMethod === "COD"
@@ -41,31 +43,34 @@ export default function PaymentMethodSelector({
         </Label>
       </div>
 
-      {/* VNPay / Sepay Payment */}
+      {/* SePay */}
       <div
         className={`flex items-start space-x-3 rounded-lg border p-4 cursor-pointer transition-colors ${
-          paymentMethod === "WALLET"
+          paymentMethod === "SEPAY"
             ? "border-black bg-gray-50"
             : "border-gray-200 hover:border-gray-300 bg-white"
         }`}
-        onClick={() => onPaymentMethodChange("WALLET")}
+        onClick={() => onPaymentMethodChange("SEPAY")}
       >
-        <RadioGroupItem value="WALLET" id="payment-wallet" className="mt-1" />
-        <Label htmlFor="payment-wallet" className="flex-1 cursor-pointer">
+        <RadioGroupItem value="SEPAY" id="payment-sepay" className="mt-1" />
+        <Label htmlFor="payment-sepay" className="flex-1 cursor-pointer">
           <div className="flex items-center gap-3">
             <span className="font-semibold text-gray-900 text-sm">
-              Thanh toán trực tuyến (VNPay / SePay QR)
+              Thanh toán trực tuyến (SePay QR)
             </span>
             <Image
-              src="/images/logo/vnpay.svg"
-              alt="VNPay"
+              src="/images/logo/sepay.svg"
+              alt="SePay"
               width={50}
               height={18}
               className="h-4 w-auto"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
             />
           </div>
           <p className="text-xs text-gray-500 mt-0.5">
-            Chuyển khoản ngân hàng tức thì qua mã QR hoặc cổng thanh toán an toàn.
+            Chuyển khoản ngân hàng tức thì qua mã QR — an toàn, nhanh chóng.
           </p>
         </Label>
       </div>

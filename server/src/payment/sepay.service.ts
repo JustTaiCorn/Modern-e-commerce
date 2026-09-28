@@ -30,6 +30,7 @@ export class SepayService {
       'order_invoice_number',
       'order_description',
       'customer_id',
+      'notify_url',
       'success_url',
       'error_url',
       'cancel_url',
@@ -53,6 +54,8 @@ export class SepayService {
 
   /**
    * Build checkout form data to be submitted to SePay.
+   * notify_url: SePay sẽ POST IPN webhook về URL này khi thanh toán hoàn tất.
+   * Phải là URL public (không phải localhost khi test thật).
    */
   buildCheckoutFormData(params: {
     invoiceNumber: string;
@@ -61,6 +64,7 @@ export class SepayService {
     successUrl: string;
     errorUrl: string;
     cancelUrl: string;
+    notifyUrl: string;
     customerId?: string;
   }): CheckoutFormData {
     const fields: Record<string, string> = {
@@ -68,8 +72,10 @@ export class SepayService {
       currency: 'VND',
       order_amount: String(params.amount),
       operation: 'PURCHASE',
+      payment_method: 'all',
       order_description: params.description,
       order_invoice_number: params.invoiceNumber,
+      notify_url: params.notifyUrl,
       success_url: params.successUrl,
       error_url: params.errorUrl,
       cancel_url: params.cancelUrl,

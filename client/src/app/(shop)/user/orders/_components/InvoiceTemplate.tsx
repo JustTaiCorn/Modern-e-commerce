@@ -1,11 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { OrderStatusBadge } from "./StatusBadges";
 import { formatDate, formatPrice } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
-import { createVNPayPayment } from "@/services/paymentService";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Order } from "@/types";
 
@@ -15,36 +12,6 @@ interface InvoiceTemplateProps {
 
 export function InvoiceTemplate({ order }: InvoiceTemplateProps) {
   const { authUser } = useAuthStore();
-  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
-
-  // Check if order needs VNPay payment
-  const needsVNPayPayment =
-    order.paymentMethod === "WALLET" && order.paymentStatus === "UNPAID";
-
-  // Handle VNPay payment
-  const handleVNPayPayment = async () => {
-    if (!order.id) {
-      toast.error("Không tìm thấy thông tin đơn hàng");
-      return;
-    }
-
-    setIsPaymentLoading(true);
-    try {
-      toast.info("Đang tạo liên kết thanh toán VNPay...");
-
-      const paymentUrl = await createVNPayPayment(
-        order.grandTotal,
-        order.id.toString()
-      );
-
-      // Redirect to VNPay payment gateway
-      window.location.href = paymentUrl;
-    } catch {
-      toast.error("Không thể tạo thanh toán VNPay. Vui lòng thử lại.");
-    } finally {
-      setIsPaymentLoading(false);
-    }
-  };
 
   // Parse shipping address snapshot
   const getShippingInfo = () => {

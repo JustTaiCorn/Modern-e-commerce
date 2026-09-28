@@ -44,7 +44,7 @@ export default function AdminStockOverviewPage() {
   const { fetchAllInventories, inventories } = useInventoryStore();
 
   useEffect(() => {
-    fetchProducts();
+    fetchProducts(1, 100);
     fetchCategories();
     fetchAllInventories();
   }, [fetchProducts, fetchCategories, fetchAllInventories]);
@@ -56,13 +56,25 @@ export default function AdminStockOverviewPage() {
   const inventoryData = useMemo(() => {
     return products.map((product) => {
       const productInventories = inventories.filter(
-        (inv) => inv.productVariant?.product?.id === product.id
+        (inv) =>
+          inv.productVariant?.product?.id === product.id ||
+          (inv.productVariant as any)?.productId === product.id
       );
 
-      const totalStock = productInventories.reduce(
-        (sum, inv) => sum + (inv.quantity || 0),
-        0
-      );
+      const totalStock =
+        typeof product.totalStock === "number"
+          ? product.totalStock
+          : product.variants?.length
+          ? product.variants.reduce(
+              (sum: number, v: any) => sum + (v.countInStock || 0),
+              0
+            )
+          : productInventories.length > 0
+          ? productInventories.reduce(
+              (sum, inv) => sum + (inv.quantity || 0),
+              0
+            )
+          : 0;
 
       let status: StockStatus = "in_stock";
       if (totalStock === 0) status = "out_of_stock";
@@ -71,12 +83,20 @@ export default function AdminStockOverviewPage() {
       return {
         id: product.id,
         name: product.name,
-        sku: product.sku,
+        sku:
+          product.sku ||
+          productInventories[0]?.productVariant?.sku ||
+          product.variants?.[0]?.sku ||
+          `PRD-${product.id}`,
         categoryName: product.category?.name || "N/A",
         categoryId: product.category?.id,
         totalStock,
         status,
-        basePrice: product.basePrice,
+        basePrice:
+          product.basePrice ??
+          product.minPrice ??
+          product.variants?.[0]?.price ??
+          0,
       };
     });
   }, [products, inventories]);
@@ -89,7 +109,7 @@ export default function AdminStockOverviewPage() {
       filtered = filtered.filter(
         (item) =>
           item.name.toLowerCase().includes(term) ||
-          item.sku.toLowerCase().includes(term)
+          Boolean(item.sku?.toLowerCase().includes(term))
       );
     }
 

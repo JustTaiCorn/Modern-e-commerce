@@ -137,7 +137,7 @@ export const useCartStore = create<CartState>()((set, get) => ({
     const userId = useAuthStore.getState().authUser?.id;
     if (!userId) {
       toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng");
-      return;
+      throw new Error("User not authenticated");
     }
 
     set({ isLoading: true, error: null });

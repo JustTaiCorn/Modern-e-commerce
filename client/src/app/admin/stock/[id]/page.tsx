@@ -61,22 +61,42 @@ export default function AdminProductInventoryPage() {
         }
 
         const firstInventory = productInventories[0];
+        const firstVariant = firstInventory.productVariant || firstInventory;
         setProductName(
-          firstInventory.productVariant?.product?.name || "Sản phẩm"
+          firstVariant.product?.name || "Sản phẩm"
         );
-        setProductSku(firstInventory.productVariant?.product?.sku || "");
+        setProductSku(
+          firstVariant.product?.sku ||
+          firstVariant.sku ||
+          ""
+        );
 
         const variantInventories: VariantInventory[] = productInventories.map(
-          (inv) => {
-            const variant = inv.productVariant;
+          (inv: any) => {
+            const variant = inv.productVariant || inv;
+            const size =
+              variant.size ||
+              variant.attributeValues?.find(
+                (av: any) =>
+                  av.attributeValue?.type?.name?.toLowerCase() === "size" ||
+                  !av.attributeValue?.colorHex
+              )?.attributeValue;
+            const color =
+              variant.color ||
+              variant.attributeValues?.find(
+                (av: any) =>
+                  av.attributeValue?.type?.name?.toLowerCase() === "color" ||
+                  av.attributeValue?.colorHex
+              )?.attributeValue;
+
             return {
               variantId: variant.id,
               sku: variant.sku,
-              sizeName: variant.size?.name || "N/A",
-              colorName: variant.color?.name || "N/A",
-              colorCode: variant.color?.code || "#000000",
-              currentQuantity: inv.quantity || 0,
-              newQuantity: inv.quantity || 0,
+              sizeName: size?.displayName || size?.name || size?.value || "N/A",
+              colorName: color?.displayName || color?.name || color?.value || "N/A",
+              colorCode: color?.colorHex || color?.code || "#000000",
+              currentQuantity: inv.quantity ?? variant.countInStock ?? 0,
+              newQuantity: inv.quantity ?? variant.countInStock ?? 0,
             };
           }
         );

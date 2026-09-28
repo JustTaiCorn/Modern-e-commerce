@@ -125,12 +125,54 @@ export class ReviewsService {
     return updatedReview;
   }
 
-  async remove(reviewId: number) {
+  async findByUser(userId: number) {
+    const reviews = await this.prisma.review.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            images: { take: 1, select: { url: true } },
+          },
+        },
+      },
+    });
+
+    return reviews.map((r) => ({
+      id: r.id,
+      product_id: r.productId,
+      productId: r.productId,
+      user_id: r.userId,
+      userId: r.userId,
+      rating: r.rating,
+      title: '',
+      content: r.comment,
+      comment: r.comment,
+      is_approved: true,
+      createdAt: r.createdAt.toISOString(),
+      updatedAt: r.updatedAt.toISOString(),
+      product: {
+        id: r.product.id,
+        name: r.product.name,
+        slug: r.product.slug,
+        image: r.product.images?.[0]?.url,
+      },
+    }));
+  }
+
+  async removeByUserOrAdmin(reviewId: number, userId: number, isAdmin = false) {
     const review = await this.prisma.review.findUnique({
       where: { id: reviewId },
     });
     if (!review) {
       throw new NotFoundException(`Review with ID ${reviewId} not found`);
+    }
+
+    if (!isAdmin && review.userId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền xóa đánh giá này');
     }
 
     await this.prisma.$transaction(async (tx) => {
@@ -145,6 +187,10 @@ export class ReviewsService {
     await this.redis.del(`product:${review.productId}`);
 
     return { success: true, message: 'Đã xóa đánh giá thành công' };
+  }
+
+  async remove(reviewId: number) {
+    return this.removeByUserOrAdmin(reviewId, 0, true);
   }
 
   async findByProduct(productId: number, query: QueryReviewDto) {

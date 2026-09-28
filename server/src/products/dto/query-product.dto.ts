@@ -25,6 +25,14 @@ export class QueryProductDto {
   @IsOptional()
   keyword?: string;
 
+  @IsString()
+  @IsOptional()
+  search?: string;
+
+  @IsString()
+  @IsOptional()
+  name?: string;
+
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -34,9 +42,22 @@ export class QueryProductDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @IsOptional()
+  current?: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   @Max(50)
   @IsOptional()
   limit?: number = 10;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  @IsOptional()
+  pageSize?: number;
 
   @Type(() => Number)
   @IsInt()

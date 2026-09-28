@@ -51,6 +51,12 @@ export class ReviewsController {
     return this.reviewsService.findByProduct(productId, query);
   }
 
+  @Get('reviews/user/:userId')
+  @ApiOperation({ summary: 'Lấy danh sách đánh giá của một người dùng' })
+  findByUser(@Param('userId', ParseIntPipe) userId: number) {
+    return this.reviewsService.findByUser(userId);
+  }
+
   @Put('reviews/:id')
   @UseGuards(AccessTokenGuard)
   @ApiBearerAuth()
@@ -64,12 +70,16 @@ export class ReviewsController {
   }
 
   @Delete('reviews/:id')
-  @UseGuards(AccessTokenGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @UseGuards(AccessTokenGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Xóa đánh giá vi phạm (Dành riêng cho Admin)' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.reviewsService.remove(id);
+  @ApiOperation({ summary: 'Xóa đánh giá của chính mình hoặc admin' })
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+    const isAdmin =
+      user.roles &&
+      (Array.isArray(user.roles)
+        ? user.roles.includes(Role.ADMIN)
+        : user.roles === Role.ADMIN);
+    return this.reviewsService.removeByUserOrAdmin(id, user.userId, !!isAdmin);
   }
 }

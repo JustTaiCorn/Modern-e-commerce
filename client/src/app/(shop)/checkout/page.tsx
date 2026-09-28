@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, Suspense } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -20,17 +20,18 @@ import useAuthStore from "@/stores/useAuthStore";
 import { useAddress } from "@/hooks/useAddress";
 
 import ShippingAddressForm, { ShippingFormData } from "@/app/checkout/_components/ShippingAddressForm";
-import PaymentMethodSelector from "@/app/checkout/_components/PaymentMethodSelector";
+import PaymentMethodSelector, { PaymentMethodType } from "@/app/checkout/_components/PaymentMethodSelector";
 import OrderSummary from "@/app/checkout/_components/OrderSummary";
 
+import { Coupon } from "@/types";
 import { EnrichedCartItem } from "@/types/cart";
-import { Coupon, PaymentMethod } from "@/types";
-import { createVNPayPayment, paymentService } from "@/services/paymentService";
+import { createSepayCheckout, submitSepayForm } from "@/services/paymentService";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import { useCreateOrder } from "@/services/orderService";
 import { useAvailableCoupons } from "@/services/couponService";
 import { useProductsQuery } from "@/services/productService";
 import { useForm, FormProvider, SubmitHandler } from "react-hook-form";
+
 
 function CheckoutContent() {
   const router = useRouter();
@@ -82,7 +83,7 @@ function CheckoutContent() {
     fetchProvinces();
   }, [fetchProvinces]);
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("COD");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("COD");
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [isNewAddress, setIsNewAddress] = useState(false);
   const [showCouponList, setShowCouponList] = useState(false);
@@ -278,47 +279,40 @@ function CheckoutContent() {
         request: orderRequest,
       });
 
-      if (paymentMethod === "WALLET") {
-        try {
-          toast.info("Đang chuyển tới cổng thanh toán...");
-          const paymentUrl = await createVNPayPayment(
-            createdOrder.grandTotal || summary.total,
-            createdOrder.id || (createdOrder as any).code
-          );
-          await clearCart();
-          setAppliedCoupon(null);
-          if (paymentUrl) {
-            window.location.href = paymentUrl;
-            return;
-          }
-        } catch {
-          // If VNPay fails, try SePay checkout
-          try {
-            const sepayRes = await paymentService.createSepayCheckout(
-              createdOrder.id,
-              authUser.id.toString()
-            );
-            if (sepayRes?.checkoutUrl) {
-              window.location.href = sepayRes.checkoutUrl;
-              return;
-            }
-          } catch {
-            toast.error("Không thể kết nối cổng thanh toán. Đơn hàng của bạn đã được ghi nhận.");
-          }
+      if (paymentMethod === "SEPAY") {
+        // Tạo SePay checkout session từ server
+        toast.info("Đang chuyển tới cổng thanh toán SePay...");
+        const sepayRes = await createSepayCheckout(
+          createdOrder.id,
+          `USER_${authUser.id}`
+        );
+
+        if (!sepayRes?.checkoutUrl || !sepayRes?.fields) {
+          throw new Error("Không nhận được thông tin thanh toán từ SePay");
         }
+
+        // Xóa giỏ hàng trước khi redirect
+        await clearCart();
+        setAppliedCoupon(null);
+
+        // POST form lên SePay — bắt buộc POST, không được dùng window.location.href
+        submitSepayForm(sepayRes.checkoutUrl, sepayRes.fields);
+        return;
       }
 
+      // COD — không cần thanh toán online
       toast.success(`Đặt hàng thành công! Mã đơn: ${(createdOrder as any)?.code || createdOrder.id}`);
       await clearCart();
       setAppliedCoupon(null);
       router.push("/user/orders");
     } catch (error: any) {
-      const msg = error?.response?.data?.message || "Lỗi khi xử lý đơn hàng. Vui lòng thử lại.";
+      const msg = error?.response?.data?.message || error?.message || "Lỗi khi xử lý đơn hàng. Vui lòng thử lại.";
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   if (isLoadingCart) {
     return <LoadingSpinner />;

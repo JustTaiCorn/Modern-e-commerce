@@ -19,15 +19,17 @@ interface ProductState {
     productData: any,
     selectedSizes: number[],
     selectedColors: number[],
-    imageFiles: File[]
+    imageFiles: any[]
   ) => Promise<void>;
   updateProduct: (
     id: number,
     productData: any,
     selectedSizes: number[],
     selectedColors: number[],
-    imageFiles?: File[],
-    keepImageUrls?: string[]
+    imageFiles?: any[],
+    keepImageUrls?: string[],
+    deletedImageIds?: number[],
+    existingImages?: any[]
   ) => Promise<void>;
   deleteProduct: (id: number) => Promise<void>;
   getProduct: (id: number) => Product | undefined;
@@ -49,9 +51,12 @@ export const useProductStore = create<ProductState>()(
       fetchProducts: async (current = 1, pageSize = 20) => {
         set({ isLoading: true, error: null });
         try {
-          const res = await privateClient.get(
-            `/products?current=${current}&pageSize=${pageSize}`
-          );
+          const res = await privateClient.get("/products", {
+            params: {
+              page: current,
+              limit: pageSize,
+            },
+          });
           const raw = res.data?.data || res.data;
           const data = Array.isArray(raw)
             ? raw
@@ -145,23 +150,53 @@ export const useProductStore = create<ProductState>()(
           const res = await privateClient.post("/products", payload);
           const created = res.data?.data || res.data;
           const productId = created.id;
+          const createdVariants = created.variants || [];
 
+          // ponytail: Gom nhóm ảnh theo variant hoặc colorId để upload đúng phân loại
           if (imageFiles && imageFiles.length > 0 && productId) {
-            const formData = new FormData();
-            imageFiles.forEach((file) => {
-              formData.append("files", file);
+            const groups = new Map<number | "general", File[]>();
+
+            imageFiles.forEach((item: any) => {
+              const file = item instanceof File ? item : item.file;
+              let targetVid: number | "general" = "general";
+
+              if (!(item instanceof File) && item) {
+                if (item.variantId) {
+                  targetVid = item.variantId;
+                } else if (item.colorId && createdVariants.length > 0) {
+                  const match = createdVariants.find((v: any) =>
+                    v.attributeValues?.some(
+                      (av: any) =>
+                        (av.attributeValueId || av.attributeValue?.id || av.id) === item.colorId
+                    )
+                  );
+                  if (match) targetVid = match.id;
+                }
+              }
+
+              const currentList = groups.get(targetVid) || [];
+              currentList.push(file);
+              groups.set(targetVid, currentList);
             });
 
-            try {
-              await privateClient.post(
-                `/products/${productId}/upload-image`,
-                formData,
-                {
-                  headers: { "Content-Type": "multipart/form-data" },
-                }
-              );
-            } catch (imgErr) {
-              console.warn("Failed to upload product images:", imgErr);
+            for (const [vid, files] of groups.entries()) {
+              const formData = new FormData();
+              files.forEach((f) => formData.append("files", f));
+              if (vid !== "general") {
+                formData.append("variantId", String(vid));
+              }
+
+              try {
+                await privateClient.post(
+                  `/products/${productId}/upload-image`,
+                  formData,
+                  {
+                    headers: { "Content-Type": "multipart/form-data" },
+                  }
+                );
+              } catch (imgErr) {
+                console.warn(`Failed to upload images for variant ${vid}:`, imgErr);
+              }
             }
 
             try {
@@ -204,7 +239,9 @@ export const useProductStore = create<ProductState>()(
         selectedSizes,
         selectedColors,
         imageFiles,
-        keepImageUrls = []
+        keepImageUrls = [],
+        deletedImageIds = [],
+        existingImages = []
       ) => {
         set({ isLoading: true, error: null });
         try {
@@ -219,18 +256,93 @@ export const useProductStore = create<ProductState>()(
 
           await privateClient.patch(`/products/${id}`, payload);
 
+          // ponytail: Xóa ảnh đã bị admin gỡ bỏ
+          if (deletedImageIds && deletedImageIds.length > 0) {
+            for (const imgId of deletedImageIds) {
+              try {
+                await privateClient.delete(`/products/${id}/images/${imgId}`);
+              } catch (delErr) {
+                console.warn(`Failed to delete image ${imgId}:`, delErr);
+              }
+            }
+          }
+
+          // Lấy danh sách variants hiện có để gán ảnh đúng màu sắc
+          let currentVariants: any[] = [];
+          try {
+            const currentRes = await privateClient.get(`/products/${id}`);
+            const currentProduct = currentRes.data?.data || currentRes.data;
+            currentVariants = currentProduct?.variants || [];
+          } catch (fetchErr) {
+            console.warn("Could not fetch current variants:", fetchErr);
+          }
+
+          // ponytail: Cập nhật phân loại cho ảnh hiện có (nếu admin đổi màu sắc cho ảnh cũ)
+          if (existingImages && existingImages.length > 0 && currentVariants.length > 0) {
+            for (const item of existingImages) {
+              if (item.id) {
+                let targetVid: number | null = null;
+                if (item.colorId) {
+                  const match = currentVariants.find((v: any) =>
+                    v.attributeValues?.some(
+                      (av: any) =>
+                        (av.attributeValueId || av.attributeValue?.id || av.id) === item.colorId
+                    )
+                  );
+                  if (match) targetVid = match.id;
+                }
+                try {
+                  await privateClient.patch(`/products/${id}/images/${item.id}`, {
+                    variantId: targetVid,
+                  });
+                } catch (patchErr) {
+                  console.warn(`Failed to update image ${item.id} classification:`, patchErr);
+                }
+              }
+            }
+          }
+
+          // Upload các ảnh mới theo từng phân loại (hoặc ảnh chung)
           if (imageFiles && imageFiles.length > 0) {
-            const formData = new FormData();
-            imageFiles.forEach((file) => {
-              formData.append("files", file);
+            const groups = new Map<number | "general", File[]>();
+
+            imageFiles.forEach((item: any) => {
+              const file = item instanceof File ? item : item.file;
+              let targetVid: number | "general" = "general";
+
+              if (!(item instanceof File) && item) {
+                if (item.variantId) {
+                  targetVid = item.variantId;
+                } else if (item.colorId && currentVariants.length > 0) {
+                  const match = currentVariants.find((v: any) =>
+                    v.attributeValues?.some(
+                      (av: any) =>
+                        (av.attributeValueId || av.attributeValue?.id || av.id) === item.colorId
+                    )
+                  );
+                  if (match) targetVid = match.id;
+                }
+              }
+
+              const currentList = groups.get(targetVid) || [];
+              currentList.push(file);
+              groups.set(targetVid, currentList);
             });
 
-            try {
-              await privateClient.post(`/products/${id}/upload-image`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-              });
-            } catch (imgErr) {
-              console.warn("Failed to upload product images:", imgErr);
+            for (const [vid, files] of groups.entries()) {
+              const formData = new FormData();
+              files.forEach((f) => formData.append("files", f));
+              if (vid !== "general") {
+                formData.append("variantId", String(vid));
+              }
+
+              try {
+                await privateClient.post(`/products/${id}/upload-image`, formData, {
+                  headers: { "Content-Type": "multipart/form-data" },
+                });
+              } catch (imgErr) {
+                console.warn(`Failed to upload images for variant ${vid}:`, imgErr);
+              }
             }
           }
 

@@ -55,28 +55,28 @@ export default function ProductTabs({
           <TabsList className="h-auto bg-transparent p-0 flex flex-wrap gap-8 justify-start">
             <TabsTrigger
               value="description"
-              className="relative px-0 py-3.5 bg-transparent rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-semibold tracking-wide text-muted-foreground data-[state=active]:text-foreground transition-all cursor-pointer"
+              className="group relative px-0 py-3.5 bg-transparent rounded-none border-0 border-b-2 border-transparent data-[state=active]:border-b-foreground data-[state=active]:border-t-transparent data-[state=active]:border-x-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-semibold tracking-wide text-muted-foreground data-[state=active]:text-foreground transition-all cursor-pointer focus-visible:ring-0 focus-visible:outline-none focus:outline-none outline-none shadow-none -mb-px hover:text-foreground"
             >
               Mô tả chi tiết
             </TabsTrigger>
             <TabsTrigger
               value="specs"
-              className="relative px-0 py-3.5 bg-transparent rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-semibold tracking-wide text-muted-foreground data-[state=active]:text-foreground transition-all cursor-pointer"
+              className="group relative px-0 py-3.5 bg-transparent rounded-none border-0 border-b-2 border-transparent data-[state=active]:border-b-foreground data-[state=active]:border-t-transparent data-[state=active]:border-x-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-semibold tracking-wide text-muted-foreground data-[state=active]:text-foreground transition-all cursor-pointer focus-visible:ring-0 focus-visible:outline-none focus:outline-none outline-none shadow-none -mb-px hover:text-foreground"
             >
               Thông số & Hướng dẫn bảo quản
             </TabsTrigger>
             <TabsTrigger
               value="reviews"
-              className="relative px-0 py-3.5 bg-transparent rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-semibold tracking-wide text-muted-foreground data-[state=active]:text-foreground transition-all cursor-pointer flex items-center gap-2"
+              className="group relative px-0 py-3.5 bg-transparent rounded-none border-0 border-b-2 border-transparent data-[state=active]:border-b-foreground data-[state=active]:border-t-transparent data-[state=active]:border-x-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-semibold tracking-wide text-muted-foreground data-[state=active]:text-foreground transition-all cursor-pointer flex items-center gap-2 focus-visible:ring-0 focus-visible:outline-none focus:outline-none outline-none shadow-none -mb-px hover:text-foreground"
             >
               <span>Đánh giá từ khách hàng</span>
-              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-muted text-muted-foreground data-[state=active]:bg-foreground/10 data-[state=active]:text-foreground">
+              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-muted text-muted-foreground group-data-[state=active]:bg-foreground/10 group-data-[state=active]:text-foreground transition-colors">
                 {reviews?.length || 0}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="policy"
-              className="relative px-0 py-3.5 bg-transparent rounded-none border-b-2 border-transparent data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-semibold tracking-wide text-muted-foreground data-[state=active]:text-foreground transition-all cursor-pointer"
+              className="group relative px-0 py-3.5 bg-transparent rounded-none border-0 border-b-2 border-transparent data-[state=active]:border-b-foreground data-[state=active]:border-t-transparent data-[state=active]:border-x-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-semibold tracking-wide text-muted-foreground data-[state=active]:text-foreground transition-all cursor-pointer focus-visible:ring-0 focus-visible:outline-none focus:outline-none outline-none shadow-none -mb-px hover:text-foreground"
             >
               Chính sách giao nhận
             </TabsTrigger>

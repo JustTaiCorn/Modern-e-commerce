@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import {
   Card,
@@ -21,15 +21,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProductStore } from "@/stores/productStore";
 import { useCategoryStore } from "@/stores/categoryStore";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Upload,
+  X,
+  Layers,
+  Palette,
+  Image as ImageIcon,
+  Check,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useForm, Controller } from "react-hook-form";
-import { Category } from "@/types";
+import { Category, Color, Size } from "@/types";
 import { useColors } from "@/services/colorService";
 import { useSizes } from "@/services/sizeService";
+import privateClient from "@/lib/axios";
+import { formatPrice } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface ProductFormValues {
@@ -41,14 +53,16 @@ interface ProductFormValues {
   colors: number[];
   sizes: number[];
   isPublished: boolean;
-  images?: File[];
 }
 
-interface ImagePreview {
+export interface ImageItem {
+  id?: number;
   file?: File;
   image_url: string;
-  id?: number;
   isExisting?: boolean;
+  colorId?: number | null; // null: ảnh chung sản phẩm, number: gắn với màu cụ thể
+  colorName?: string | null;
+  colorCode?: string | null;
 }
 
 export default function AdminProductFormPage() {
@@ -59,23 +73,27 @@ export default function AdminProductFormPage() {
   const { data: colors = [] } = useColors();
   const { data: sizes = [] } = useSizes();
   const { categories, fetchCategories } = useCategoryStore();
-  const { addProductWithVariants, updateProduct, getProduct } =
-    useProductStore();
+  const { addProductWithVariants, updateProduct } = useProductStore();
+
+  const [imageItems, setImageItems] = useState<ImageItem[]>([]);
+  const [deletedImageIds, setDeletedImageIds] = useState<number[]>([]);
+  const [activeImageTab, setActiveImageTab] = useState<string>("all");
+  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
   useEffect(() => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // Can choose subcategories or categories
-  const selectableCategories = categories.length > 0 
-    ? (categories.some((c) => c.parentId) ? categories.filter((c) => c.parentId) : categories)
+  const selectableCategories = categories.length > 0
+    ? categories.some((c) => c.parentId)
+      ? categories.filter((c) => c.parentId)
+      : categories
     : [];
 
   const {
     register,
     control,
     handleSubmit,
-    setValue,
     reset,
     watch,
     formState: { errors, isSubmitting },
@@ -89,56 +107,127 @@ export default function AdminProductFormPage() {
       colors: [],
       sizes: [],
       isPublished: true,
-      images: [],
     },
   });
 
-  const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([]);
+  const selectedColorIds = watch("colors") || [];
+  const selectedSizeIds = watch("sizes") || [];
+  const baseSku = watch("sku") || "SKU";
+  const basePrice = watch("basePrice") || 0;
 
+  // ponytail: Danh sách các màu đã được chọn trong form
+  const activeSelectedColors = useMemo(() => {
+    return colors.filter((c) => selectedColorIds.includes(c.id));
+  }, [colors, selectedColorIds]);
+
+  const activeSelectedSizes = useMemo(() => {
+    return sizes.filter((s) => selectedSizeIds.includes(s.id));
+  }, [sizes, selectedSizeIds]);
+
+  // ponytail: Tải dữ liệu sản phẩm khi ở chế độ chỉnh sửa (Edit mode)
   useEffect(() => {
-    if (
-      isEdit &&
-      params?.id &&
-      categories.length > 0 &&
-      colors.length > 0 &&
-      sizes.length > 0
-    ) {
-      const existingProduct = getProduct(Number(params.id));
+    if (isEdit && params?.id) {
+      const loadProduct = async () => {
+        setIsLoadingProduct(true);
+        try {
+          const res = await privateClient.get(`/products/${params.id}`);
+          const p = res.data?.data || res.data;
+          if (p) {
+            const productColors = p.colors?.map((c: any) => c.id) || [];
+            const productSizes = p.sizes?.map((s: any) => s.id) || [];
 
-      if (existingProduct) {
-        const productColors = existingProduct.colors?.map((c) => c.id) || [];
-        const productSizes = existingProduct.sizes?.map((s) => s.id) || [];
+            // Nạp ảnh hiện có kèm thông tin phân loại màu sắc
+            const existingImages: ImageItem[] = (p.images || []).map((img: any) => ({
+              id: img.id,
+              image_url: img.url || img.image_url,
+              isExisting: true,
+              colorId: img.colorId ?? null,
+              colorName: img.colorName ?? null,
+              colorCode: img.colorCode ?? null,
+            }));
 
-        // Load existing images
-        const existingImages: ImagePreview[] =
-          existingProduct.images?.map((img) => ({
-            image_url: img.image_url || (img as any).url,
-            id: img.id,
-            isExisting: true,
-          })) || [];
+            setImageItems(existingImages);
 
-        setImagePreviews(existingImages);
-
-        setTimeout(() => {
-          reset({
-            name: existingProduct.name,
-            sku: existingProduct.sku,
-            description: existingProduct.description || "",
-            basePrice: existingProduct.basePrice,
-            category: existingProduct.category,
-            colors: productColors,
-            sizes: productSizes,
-            isPublished: existingProduct.isPublished,
-            images: [] as File[],
-          });
-        }, 100);
-      }
+            reset({
+              name: p.name,
+              sku: p.sku || `PRD-${p.id}`,
+              description: p.description || "",
+              basePrice: Number(p.basePrice ?? p.minPrice ?? 0),
+              category: p.category,
+              colors: productColors,
+              sizes: productSizes,
+              isPublished: p.isPublished !== false && p.isActive !== false,
+            });
+          }
+        } catch (err) {
+          console.error("Failed to load product:", err);
+          toast.error("Không thể tải thông tin sản phẩm");
+        } finally {
+          setIsLoadingProduct(false);
+        }
+      };
+      loadProduct();
     }
-  }, [isEdit, params?.id, getProduct, reset, categories, colors, sizes]);
+  }, [isEdit, params?.id, reset]);
+
+  // ponytail: Upload ảnh theo nhóm màu sắc hoặc ảnh chung
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    targetColorId: number | null = null
+  ) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const targetColor = colors.find((c) => c.id === targetColorId);
+
+    const newItems: ImageItem[] = files.map((file) => ({
+      file,
+      image_url: URL.createObjectURL(file),
+      isExisting: false,
+      colorId: targetColorId,
+      colorName: targetColor ? targetColor.name : null,
+      colorCode: targetColor ? targetColor.code : null,
+    }));
+
+    setImageItems((prev) => [...prev, ...newItems]);
+    // Reset file input để có thể chọn lại cùng 1 file nếu muốn
+    e.target.value = "";
+  };
+
+  const removeImage = (index: number) => {
+    const target = imageItems[index];
+    if (target.isExisting && target.id) {
+      setDeletedImageIds((prev) => [...prev, target.id!]);
+    }
+    setImageItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const changeImageColor = (index: number, newColorId: number | null) => {
+    const targetColor = colors.find((c) => c.id === newColorId);
+    setImageItems((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              colorId: newColorId,
+              colorName: targetColor ? targetColor.name : null,
+              colorCode: targetColor ? targetColor.code : null,
+            }
+          : item
+      )
+    );
+  };
+
+  const filteredImageItems = useMemo(() => {
+    if (activeImageTab === "all") return imageItems;
+    if (activeImageTab === "general") return imageItems.filter((img) => !img.colorId);
+    const colorIdNum = Number(activeImageTab);
+    return imageItems.filter((img) => img.colorId === colorIdNum);
+  }, [imageItems, activeImageTab]);
 
   const onSubmit = async (data: ProductFormValues) => {
     if (!data.category || data.colors.length === 0 || data.sizes.length === 0) {
-      toast.warning("Vui lòng chọn đầy đủ danh mục, ít nhất một màu sắc và một kích thước");
+      toast.warning("Vui lòng chọn danh mục, ít nhất một màu sắc và một kích thước");
       return;
     }
 
@@ -152,27 +241,42 @@ export default function AdminProductFormPage() {
         isPublished: data.isPublished,
       };
 
+      // Tách các file mới cần upload kèm colorId
+      const newImageUploads = imageItems
+        .filter((img) => !img.isExisting && img.file)
+        .map((img) => ({
+          file: img.file!,
+          colorId: img.colorId ?? null,
+        }));
+
       if (isEdit && params?.id) {
-        const keepImageUrls = imagePreviews
+        const keepImageUrls = imageItems
           .filter((img) => img.isExisting)
           .map((img) => img.image_url);
 
-        const newImageFiles = data.images || [];
+        const existingImagesWithClassification = imageItems
+          .filter((img) => img.isExisting && img.id)
+          .map((img) => ({
+            id: img.id!,
+            colorId: img.colorId ?? null,
+          }));
 
         await updateProduct(
           Number(params.id),
           productData,
           data.sizes,
           data.colors,
-          newImageFiles,
-          keepImageUrls
+          newImageUploads,
+          keepImageUrls,
+          deletedImageIds,
+          existingImagesWithClassification
         );
       } else {
         await addProductWithVariants(
           productData,
           data.sizes,
           data.colors,
-          data.images || []
+          newImageUploads
         );
       }
 
@@ -182,31 +286,19 @@ export default function AdminProductFormPage() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-
-    const newPreviews: ImagePreview[] = files.map((file) => ({
-      file,
-      image_url: URL.createObjectURL(file),
-      isExisting: false,
-    }));
-
-    setImagePreviews((prev) => [...prev, ...newPreviews]);
-    setValue("images", [...(watch("images") || []), ...files]);
-  };
-
-  const removeImage = (index: number) => {
-    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
-
-    const currentImages = watch("images") || [];
-    setValue(
-      "images",
-      currentImages.filter((_, i) => i !== index)
+  if (isLoadingProduct) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-10 h-10 border-4 border-gray-200 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-gray-500 text-sm">Đang tải thông tin sản phẩm...</p>
+        </div>
+      </div>
     );
-  };
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
       {/* Header */}
       <div className="flex items-center space-x-4">
         <Button variant="ghost" size="icon" asChild>
@@ -220,19 +312,19 @@ export default function AdminProductFormPage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {isEdit
-              ? "Cập nhật thông tin chi tiết và biến thể sản phẩm"
-              : "Tạo sản phẩm và tự động sinh các biến thể kích thước / màu sắc"}
+              ? "Cập nhật thông tin chi tiết, màu sắc, kích thước và ảnh phân loại"
+              : "Tạo sản phẩm, tải ảnh riêng biệt theo từng màu sắc & tự động tạo biến thể"}
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Basic Information */}
+          {/* Cột 1: Thông tin cơ bản */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Thông tin cơ bản</CardTitle>
-              <CardDescription>Nhập tên, mã SKU, mô tả và giá sản phẩm</CardDescription>
+              <CardDescription>Nhập tên, mã SKU gốc, mô tả và giá sản phẩm</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -245,14 +337,12 @@ export default function AdminProductFormPage() {
                   className={errors.name ? "border-destructive" : ""}
                 />
                 {errors.name && (
-                  <p className="text-xs text-destructive">
-                    {errors.name.message}
-                  </p>
+                  <p className="text-xs text-destructive">{errors.name.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label>SKU *</Label>
+                <Label>Mã SKU Gốc *</Label>
                 <Input
                   {...register("sku", {
                     required: "SKU là bắt buộc",
@@ -261,9 +351,7 @@ export default function AdminProductFormPage() {
                   className={errors.sku ? "border-destructive" : ""}
                 />
                 {errors.sku && (
-                  <p className="text-xs text-destructive">
-                    {errors.sku.message}
-                  </p>
+                  <p className="text-xs text-destructive">{errors.sku.message}</p>
                 )}
               </div>
 
@@ -278,14 +366,12 @@ export default function AdminProductFormPage() {
                   className={errors.description ? "border-destructive" : ""}
                 />
                 {errors.description && (
-                  <p className="text-xs text-destructive">
-                    {errors.description.message}
-                  </p>
+                  <p className="text-xs text-destructive">{errors.description.message}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label>Giá Gốc (VNĐ) *</Label>
+                <Label>Giá Bán Chuẩn (VNĐ) *</Label>
                 <Input
                   type="number"
                   {...register("basePrice", {
@@ -300,9 +386,7 @@ export default function AdminProductFormPage() {
                   className={errors.basePrice ? "border-destructive" : ""}
                 />
                 {errors.basePrice && (
-                  <p className="text-xs text-destructive">
-                    {errors.basePrice.message}
-                  </p>
+                  <p className="text-xs text-destructive">{errors.basePrice.message}</p>
                 )}
               </div>
 
@@ -324,12 +408,12 @@ export default function AdminProductFormPage() {
             </CardContent>
           </Card>
 
-          {/* Categories & Options */}
+          {/* Cột 2: Danh mục & Phân loại Màu sắc / Kích thước */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Danh mục & Tùy chọn</CardTitle>
+              <CardTitle className="text-lg">Danh mục & Phân loại</CardTitle>
               <CardDescription>
-                Chọn danh mục, màu sắc và kích thước áp dụng
+                Chọn danh mục, màu sắc và kích thước áp dụng cho sản phẩm
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -368,20 +452,22 @@ export default function AdminProductFormPage() {
                   )}
                 />
                 {errors.category && (
-                  <p className="text-xs text-destructive">
-                    {errors.category.message}
-                  </p>
+                  <p className="text-xs text-destructive">{errors.category.message}</p>
                 )}
               </div>
 
               <div className="space-y-3">
-                <Label>Màu Sắc Áp Dụng *</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Màu Sắc Áp Dụng *</Label>
+                  <span className="text-xs text-muted-foreground">
+                    Đã chọn: {activeSelectedColors.length} màu
+                  </span>
+                </div>
                 <Controller
                   control={control}
                   name="colors"
                   rules={{
-                    validate: (v) =>
-                      v && v.length > 0 || "Chọn ít nhất một màu sắc",
+                    validate: (v) => (v && v.length > 0) || "Chọn ít nhất một màu sắc",
                   }}
                   render={({ field }) => (
                     <div className="grid grid-cols-2 gap-2 border p-3 rounded-lg max-h-48 overflow-y-auto">
@@ -417,20 +503,22 @@ export default function AdminProductFormPage() {
                   )}
                 />
                 {errors.colors && (
-                  <p className="text-xs text-destructive">
-                    {errors.colors.message}
-                  </p>
+                  <p className="text-xs text-destructive">{errors.colors.message}</p>
                 )}
               </div>
 
               <div className="space-y-3">
-                <Label>Kích Thước Áp Dụng *</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Kích Thước Áp Dụng *</Label>
+                  <span className="text-xs text-muted-foreground">
+                    Đã chọn: {activeSelectedSizes.length} size
+                  </span>
+                </div>
                 <Controller
                   control={control}
                   name="sizes"
                   rules={{
-                    validate: (v) =>
-                      v && v.length > 0 || "Chọn ít nhất một kích thước",
+                    validate: (v) => (v && v.length > 0) || "Chọn ít nhất một kích thước",
                   }}
                   render={({ field }) => (
                     <div className="grid grid-cols-3 gap-2 border p-3 rounded-lg max-h-48 overflow-y-auto">
@@ -462,84 +550,276 @@ export default function AdminProductFormPage() {
                   )}
                 />
                 {errors.sizes && (
-                  <p className="text-xs text-destructive">
-                    {errors.sizes.message}
-                  </p>
+                  <p className="text-xs text-destructive">{errors.sizes.message}</p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Images */}
+          {/* KHU VỰC TẢI ẢNH THEO TỪNG PHÂN LOẠI MÀU SẮC (Crucial Redesign!) */}
           <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-lg">Hình ảnh sản phẩm</CardTitle>
-              <CardDescription>
-                Tải lên một hoặc nhiều hình ảnh minh họa ({imagePreviews.length} ảnh đã chọn)
-              </CardDescription>
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <ImageIcon className="h-5 w-5 text-primary" />
+                    Hình ảnh theo phân loại màu sắc ({imageItems.length} ảnh)
+                  </CardTitle>
+                  <CardDescription>
+                    Tải ảnh riêng biệt cho từng màu sắc (hoặc ảnh dùng chung). Khách hàng bấm màu nào sẽ thấy đúng ảnh màu đó trên web.
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border-2 border-dashed border-gray-200 hover:border-primary/50 transition-colors rounded-lg p-6 text-center">
+            <CardContent className="space-y-5">
+              {/* Tabs lọc & quản lý ảnh theo màu */}
+              <Tabs
+                value={activeImageTab}
+                onValueChange={setActiveImageTab}
+                className="w-full"
+              >
+                <TabsList className="flex flex-wrap h-auto p-1 gap-1 bg-gray-100/80 rounded-lg">
+                  <TabsTrigger value="all" className="text-xs">
+                    Tất cả ảnh ({imageItems.length})
+                  </TabsTrigger>
+                  <TabsTrigger value="general" className="text-xs">
+                    Ảnh dùng chung ({imageItems.filter((i) => !i.colorId).length})
+                  </TabsTrigger>
+                  {activeSelectedColors.map((color) => {
+                    const count = imageItems.filter((i) => i.colorId === color.id).length;
+                    return (
+                      <TabsTrigger
+                        key={color.id}
+                        value={String(color.id)}
+                        className="text-xs flex items-center gap-1.5"
+                      >
+                        <span
+                          className="w-2.5 h-2.5 rounded-full border shadow-2xs"
+                          style={{ backgroundColor: color.code }}
+                        />
+                        {color.name} ({count})
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+              </Tabs>
+
+              {/* Khung tải ảnh dành riêng cho tab đang chọn */}
+              <div className="border-2 border-dashed border-gray-200 hover:border-primary/50 transition-colors rounded-xl p-6 text-center bg-gray-50/50">
                 <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                <p className="text-sm text-gray-600 mb-2">
-                  Kéo thả hình ảnh vào đây hoặc nhấp để chọn tệp
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  {activeImageTab === "all" || activeImageTab === "general" ? (
+                    <span>Tải ảnh dùng chung cho sản phẩm</span>
+                  ) : (
+                    <span>
+                      Tải ảnh cho phân loại:{" "}
+                      <strong className="text-primary">
+                        {colors.find((c) => String(c.id) === activeImageTab)?.name}
+                      </strong>
+                    </span>
+                  )}
                 </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Hỗ trợ định dạng JPG, PNG, WEBP. Chọn nhiều ảnh cùng lúc.
+                </p>
+
                 <Input
                   type="file"
                   multiple
                   accept="image/*"
-                  onChange={handleImageUpload}
+                  onChange={(e) => {
+                    const targetColorId =
+                      activeImageTab === "all" || activeImageTab === "general"
+                        ? null
+                        : Number(activeImageTab);
+                    handleImageUpload(e, targetColorId);
+                  }}
                   className="hidden"
-                  id="image-upload"
+                  id="tab-image-upload"
                 />
-                <Button type="button" variant="outline" asChild>
-                  <label htmlFor="image-upload" className="cursor-pointer">
-                    Chọn tệp ảnh
+                <Button type="button" variant="outline" size="sm" asChild>
+                  <label htmlFor="tab-image-upload" className="cursor-pointer">
+                    Chọn tệp tải lên
                   </label>
                 </Button>
               </div>
 
-              {/* Preview Grid */}
-              {imagePreviews.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-xs font-semibold uppercase text-gray-500 mb-3">
-                    Ảnh đã tải lên:
-                  </h4>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                    {imagePreviews.map((preview, index) => (
-                      <div key={index} className="relative group aspect-square rounded-lg border overflow-hidden bg-gray-50">
-                        <Image
-                          src={preview.image_url}
-                          alt={`Preview ${index + 1}`}
-                          fill
-                          className="object-cover"
-                          unoptimized={true}
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeImage(index)}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
+              {/* Lưới danh sách ảnh preview kèm selector gán màu */}
+              {filteredImageItems.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground border rounded-lg bg-white">
+                  Chưa có hình ảnh nào trong mục này. Bấm &quot;Chọn tệp tải lên&quot; ở trên để thêm ảnh.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {filteredImageItems.map((item) => {
+                    const realIndex = imageItems.findIndex((i) => i === item);
+                    const currentColor = colors.find((c) => c.id === item.colorId);
+
+                    return (
+                      <div
+                        key={item.id ? `exist-${item.id}` : `new-${realIndex}`}
+                        className="group relative rounded-xl border bg-white p-2 shadow-xs space-y-2 flex flex-col justify-between overflow-hidden"
+                      >
+                        <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-gray-100 border">
+                          <Image
+                            src={item.image_url}
+                            alt="Ảnh sản phẩm"
+                            fill
+                            className="object-cover"
+                            unoptimized={true}
+                          />
+
+                          {/* Huy hiệu màu trên ảnh */}
+                          <div className="absolute top-1.5 left-1.5">
+                            {currentColor ? (
+                              <span
+                                className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/95 text-gray-800 shadow-xs border"
+                              >
+                                <span
+                                  className="w-2 h-2 rounded-full border shadow-2xs"
+                                  style={{ backgroundColor: currentColor.code }}
+                                />
+                                {currentColor.name}
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/60 text-white backdrop-blur-xs">
+                                Dùng chung
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Nút xóa ảnh */}
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1.5 right-1.5 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => removeImage(realIndex)}
+                            title="Xóa ảnh này"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+
+                        {/* Dropdown đổi màu gán cho ảnh nhanh chóng */}
+                        <div className="space-y-1">
+                          <Label className="text-[11px] text-muted-foreground block">
+                            Gắn với phân loại:
+                          </Label>
+                          <select
+                            value={item.colorId ? String(item.colorId) : "general"}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              changeImageColor(
+                                realIndex,
+                                val === "general" ? null : Number(val)
+                              );
+                            }}
+                            className="w-full text-xs h-7 px-2 rounded-md border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary"
+                          >
+                            <option value="general">Dùng chung (Mặc định)</option>
+                            {activeSelectedColors.map((c) => (
+                              <option key={c.id} value={String(c.id)}>
+                                Màu: {c.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
           </Card>
+
+          {/* BẢNG XEM TRƯỚC CÁC BIẾN THỂ TỰ ĐỘNG SINH (Variants Matrix Preview) */}
+          {activeSelectedColors.length > 0 && activeSelectedSizes.length > 0 && (
+            <Card className="lg:col-span-2">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  Xem trước ma trận biến thể ({activeSelectedColors.length * activeSelectedSizes.length} phân loại)
+                </CardTitle>
+                <CardDescription>
+                  Hệ thống tự động sinh các mã biến thể tương ứng từ Màu sắc và Kích thước đã chọn
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto max-h-60 rounded-lg border">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-gray-50/80 sticky top-0 border-b">
+                      <tr>
+                        <th className="p-2.5 font-semibold text-gray-700">Mã SKU biến thể</th>
+                        <th className="p-2.5 font-semibold text-gray-700">Màu sắc</th>
+                        <th className="p-2.5 font-semibold text-gray-700">Kích thước</th>
+                        <th className="p-2.5 font-semibold text-gray-700">Giá bán</th>
+                        <th className="p-2.5 font-semibold text-gray-700 text-center">Tồn kho ban đầu</th>
+                        <th className="p-2.5 font-semibold text-gray-700 text-center">Ảnh đã gắn</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {activeSelectedColors.flatMap((c) =>
+                        activeSelectedSizes.map((s) => {
+                          const variantSku = `${baseSku}-C${c.id}-S${s.id}`;
+                          const attachedImagesCount = imageItems.filter(
+                            (i) => i.colorId === c.id
+                          ).length;
+
+                          return (
+                            <tr key={`${c.id}-${s.id}`} className="hover:bg-gray-50/50">
+                              <td className="p-2.5 font-mono font-medium text-gray-800">
+                                {variantSku}
+                              </td>
+                              <td className="p-2.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className="w-2.5 h-2.5 rounded-full border shadow-2xs"
+                                    style={{ backgroundColor: c.code }}
+                                  />
+                                  <span>{c.name}</span>
+                                </div>
+                              </td>
+                              <td className="p-2.5 font-semibold">{s.code}</td>
+                              <td className="p-2.5 text-gray-700 font-medium">
+                                {formatPrice(basePrice)}
+                              </td>
+                              <td className="p-2.5 text-center text-emerald-700 font-semibold">
+                                100 sp
+                              </td>
+                              <td className="p-2.5 text-center">
+                                <span
+                                  className={`inline-block px-2 py-0.5 rounded-full font-medium ${
+                                    attachedImagesCount > 0
+                                      ? "bg-primary/10 text-primary"
+                                      : "bg-gray-100 text-gray-500"
+                                  }`}
+                                >
+                                  {attachedImagesCount > 0
+                                    ? `${attachedImagesCount} ảnh`
+                                    : "Chưa có"}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
 
-        <div className="flex justify-end gap-3 pt-6">
+        {/* Footer Actions */}
+        <div className="flex justify-end gap-3 pt-6 border-t mt-6">
           <Button type="button" variant="outline" asChild>
             <Link href="/admin/products">Hủy bỏ</Link>
           </Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting
-              ? "Đang lưu..."
+              ? "Đang lưu sản phẩm..."
               : isEdit
               ? "Cập nhật sản phẩm"
               : "Tạo sản phẩm & Biến thể"}

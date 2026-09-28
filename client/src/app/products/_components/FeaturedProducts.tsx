@@ -20,7 +20,7 @@ export default function FeaturedProducts({ products }: FeaturedProductsProps) {
     : [];
 
   const allProducts = rawList
-    .filter((p) => p.isPublished !== false && p.isActive !== false)
+    .filter((p: any) => p.isPublished !== false && p.isActive !== false)
     .map(convertProductToItemProps);
   const displayedProducts = allProducts.slice(0, displayCount);
 

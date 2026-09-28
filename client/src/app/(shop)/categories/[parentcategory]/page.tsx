@@ -64,7 +64,13 @@ export default function ParentCategoryPage() {
   }, [parentCategory, getChildCategories]);
 
   const filteredProducts = useMemo(() => {
-    let filtered = products.filter((p) => p.isPublished);
+    const rawList = Array.isArray(products)
+      ? products
+      : Array.isArray((products as any)?.items)
+      ? (products as any).items
+      : [];
+
+    let filtered = rawList.filter((p: any) => p.isPublished !== false && p.isActive !== false);
 
     if (parentCategory) {
       const categoryIds = [
@@ -72,52 +78,59 @@ export default function ParentCategoryPage() {
         ...childCategories.map((c) => c.id),
       ];
       filtered = filtered.filter(
-        (product) =>
+        (product: any) =>
           product.category?.id && categoryIds.includes(product.category.id)
       );
     }
 
     if (filters.categoryId) {
       filtered = filtered.filter(
-        (product) => product.category?.id === filters.categoryId
+        (product: any) => product.category?.id === filters.categoryId
       );
     }
 
-    filtered = filtered.filter((product) => {
-      return (
-        product.basePrice >= filters.priceRange[0] &&
-        product.basePrice <= filters.priceRange[1]
-      );
+    const getPrice = (p: any) =>
+      p.basePrice ?? p.minPrice ?? (p.variants?.[0]?.price ? Number(p.variants[0].price) : 0);
+
+    filtered = filtered.filter((product: any) => {
+      const price = getPrice(product);
+      return price >= filters.priceRange[0] && price <= filters.priceRange[1];
     });
 
     if (filters.colorIds.length > 0) {
-      filtered = filtered.filter((product) =>
-        product.variants?.some(
-          (v) => v.color?.id && filters.colorIds.includes(v.color.id)
-        )
+      filtered = filtered.filter((product: any) =>
+        product.variants?.some((v: any) => {
+          if (v.color?.id && filters.colorIds.includes(v.color.id)) return true;
+          return v.attributeValues?.some((av: any) =>
+            filters.colorIds.includes(av.attributeValue?.id || av.attributeValueId || av.id)
+          );
+        })
       );
     }
 
     if (filters.sizeIds.length > 0) {
-      filtered = filtered.filter((product) =>
-        product.variants?.some(
-          (v) => v.size?.id && filters.sizeIds.includes(v.size.id)
-        )
+      filtered = filtered.filter((product: any) =>
+        product.variants?.some((v: any) => {
+          if (v.size?.id && filters.sizeIds.includes(v.size.id)) return true;
+          return v.attributeValues?.some((av: any) =>
+            filters.sizeIds.includes(av.attributeValue?.id || av.attributeValueId || av.id)
+          );
+        })
       );
     }
 
-    filtered.sort((a, b) => {
+    filtered.sort((a: any, b: any) => {
       let comparison = 0;
       switch (filters.sortBy) {
         case "name":
           comparison = a.name.localeCompare(b.name);
           break;
         case "price":
-          comparison = a.basePrice - b.basePrice;
+          comparison = getPrice(a) - getPrice(b);
           break;
         case "rating":
-          const ratingA = a.reviews?.length ? a.reviews.reduce((s, r) => s + r.rating, 0) / a.reviews.length : 0;
-          const ratingB = b.reviews?.length ? b.reviews.reduce((s, r) => s + r.rating, 0) / b.reviews.length : 0;
+          const ratingA = a.reviews?.length ? a.reviews.reduce((s: number, r: any) => s + r.rating, 0) / a.reviews.length : 0;
+          const ratingB = b.reviews?.length ? b.reviews.reduce((s: number, r: any) => s + r.rating, 0) / b.reviews.length : 0;
           comparison = ratingA - ratingB;
           break;
         case "newest":

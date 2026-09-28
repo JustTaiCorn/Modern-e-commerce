@@ -4,6 +4,8 @@ export interface Category {
   parent?: Category | null;
   name: string;
   slug: string;
+  description?: string;
+  imageUrl?: string;
   isActive: boolean;
   children?: Category[];
 }

@@ -134,7 +134,8 @@ export default function AdminProductListPage() {
                     <TableHead className="w-20">Ảnh</TableHead>
                     <TableHead>Tên sản phẩm</TableHead>
                     <TableHead>Mã SKU</TableHead>
-                    <TableHead>Giá gốc</TableHead>
+                    <TableHead>Giá bán</TableHead>
+                    <TableHead className="text-center">Tồn kho</TableHead>
                     <TableHead>Danh mục</TableHead>
                     <TableHead>Trạng thái</TableHead>
                     <TableHead className="text-right">Thao tác</TableHead>
@@ -143,7 +144,7 @@ export default function AdminProductListPage() {
                 <TableBody>
                   {products.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         Không có sản phẩm nào
                       </TableCell>
                     </TableRow>
@@ -153,6 +154,27 @@ export default function AdminProductListPage() {
                         (c) => c.id === product.category?.id
                       );
                       const firstImage = product.images?.[0]?.image_url || product.images?.[0]?.url;
+                      const displaySku =
+                        product.sku ||
+                        product.variants?.[0]?.sku ||
+                        `PRD-${product.id}`;
+                      const displayPrice =
+                        product.minPrice && product.maxPrice && product.minPrice !== product.maxPrice
+                          ? `${formatPrice(product.minPrice)} - ${formatPrice(product.maxPrice)}`
+                          : formatPrice(
+                              product.basePrice ??
+                                product.minPrice ??
+                                (product.variants?.[0]?.price ? Number(product.variants[0].price) : 0)
+                            );
+                      const stockCount =
+                        product.totalStock ??
+                        product.variants?.reduce(
+                          (sum: number, v: any) => sum + (v.countInStock || 0),
+                          0
+                        ) ??
+                        0;
+                      const isProductActive =
+                        product.isPublished !== false && product.isActive !== false;
 
                       return (
                         <TableRow key={product.id}>
@@ -184,12 +206,25 @@ export default function AdminProductListPage() {
                           </TableCell>
                           <TableCell>
                             <span className="font-mono text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                              {product.sku || "N/A"}
+                              {displaySku}
                             </span>
                           </TableCell>
                           <TableCell>
                             <span className="font-medium text-sm text-gray-900">
-                              {formatPrice(product.basePrice)}
+                              {displayPrice}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span
+                              className={`inline-block font-semibold text-xs px-2.5 py-0.5 rounded-full ${
+                                stockCount <= 0
+                                  ? "bg-red-100 text-red-700"
+                                  : stockCount <= 10
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-emerald-100 text-emerald-700"
+                              }`}
+                            >
+                              {stockCount <= 0 ? "Hết hàng" : `${stockCount} sp`}
                             </span>
                           </TableCell>
                           <TableCell>
@@ -199,10 +234,10 @@ export default function AdminProductListPage() {
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={product.isPublished ? "default" : "secondary"}
-                              className={product.isPublished ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"}
+                              variant={isProductActive ? "default" : "secondary"}
+                              className={isProductActive ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-600"}
                             >
-                              {product.isPublished ? "Đang bán" : "Ẩn"}
+                              {isProductActive ? "Đang bán" : "Ẩn"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">

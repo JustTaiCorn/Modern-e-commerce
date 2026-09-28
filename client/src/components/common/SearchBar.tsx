@@ -59,10 +59,14 @@ export default function SearchBar({
     setIsLoading(true);
     try {
       const response = await privateClient.get("/products", {
-        params: { search: query, name: query },
+        params: { keyword: query },
       });
-      const data = response.data?.data || response.data || [];
-      const list = Array.isArray(data) ? data : [];
+      const resData = response.data?.data || response.data;
+      const list = Array.isArray(resData)
+        ? resData
+        : Array.isArray(resData?.items)
+        ? resData.items
+        : [];
       setSearchResults(list.slice(0, 6));
       setShowResults(true);
     } catch (error) {

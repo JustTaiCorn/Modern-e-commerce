@@ -17,9 +17,9 @@ export default function BestSellerProduct({ products }: BestSellerProductProps) 
       ? (products as any).items
       : [];
     return rawList
-      .filter((p) => p.isPublished !== false && p.isActive !== false)
+      .filter((p: any) => p.isPublished !== false && p.isActive !== false)
       .map(convertProductToItemProps)
-      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
       .slice(0, 8);
   }, [products]);
 

@@ -13,11 +13,32 @@ export const productKeys = {
   detail: (id: number) => [...productKeys.details(), id] as const,
 };
 
-export const useProductsQuery = (params?: { current?: number; pageSize?: number }) => {
+export const useProductsQuery = (params?: {
+  current?: number;
+  pageSize?: number;
+  page?: number;
+  limit?: number;
+  keyword?: string;
+  categorySlug?: string;
+  brandSlug?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy?: string;
+  sortOrder?: string;
+}) => {
   const { setProducts } = useProductStore();
   const query = useQuery({
     queryKey: [...productKeys.lists(), params],
     queryFn: async () => {
+      const page = params?.page ?? params?.current ?? 1;
+      const limit = params?.limit ?? params?.pageSize ?? 20;
+      const response = await privateClient.get("/products", {
+        params: {
+          ...params,
+          page,
+          limit,
+        },
+      });
       const raw = response.data?.data || response.data;
       if (Array.isArray(raw)) return raw as Product[];
       if (raw && Array.isArray(raw.items)) return raw.items as Product[];

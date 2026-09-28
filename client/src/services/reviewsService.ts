@@ -24,14 +24,18 @@ export const reviewService = {
   },
 
   createReview: async (reviewData: CreateReviewData): Promise<Review> => {
-    const response = await privateClient.post("/reviews", reviewData);
+    const response = await privateClient.post(
+      `/products/${reviewData.product_id}/reviews`,
+      {
+        rating: reviewData.rating,
+        comment: reviewData.content || reviewData.title || "Sản phẩm rất tốt",
+      }
+    );
     return response.data?.data || response.data;
   },
 
-  deleteReview: async (reviewId: number, userId: number): Promise<void> => {
-    await privateClient.delete(`/reviews/${reviewId}`, {
-      params: { userId },
-    });
+  deleteReview: async (reviewId: number, userId?: number): Promise<void> => {
+    await privateClient.delete(`/reviews/${reviewId}`);
   },
 };
 

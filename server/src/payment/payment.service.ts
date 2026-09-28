@@ -36,9 +36,10 @@ export class PaymentService {
       throw new NotFoundException(`Order #${orderId} not found`);
     }
 
-    if (order.status !== 'PENDING') {
+    // Order có thể ở trạng thái NEW (vừa tạo) hoặc PENDING
+    if (order.status !== 'NEW' && order.status !== 'PENDING') {
       throw new BadRequestException(
-        `Order #${orderId} is not in PENDING status (current: ${order.status})`,
+        `Order #${orderId} cannot be paid (current status: ${order.status})`,
       );
     }
 
@@ -57,10 +58,16 @@ export class PaymentService {
       this.configService.get<string>('ALLOWED_ORIGINS')?.split(',')[0] ||
       'http://localhost:5174';
 
+    // SERVER_URL là domain public của server (dùng ngrok khi dev local)
+    const serverUrl =
+      this.configService.get<string>('SERVER_URL') ||
+      `http://localhost:${this.configService.get<string>('PORT') || '3000'}`;
+
     const formData = this.sepayService.buildCheckoutFormData({
       invoiceNumber,
       amount: Number(order.totalPrice),
       description: `Thanh toan don hang ${invoiceNumber}`,
+      notifyUrl: `${serverUrl}/payment/sepay/ipn`,
       successUrl: `${clientUrl}/payment/success?orderId=${order.id}`,
       errorUrl: `${clientUrl}/payment/error?orderId=${order.id}`,
       cancelUrl: `${clientUrl}/payment/cancel?orderId=${order.id}`,

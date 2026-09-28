@@ -87,10 +87,16 @@ export const useInventoryStore = create<InventoryState>()(
       fetchInventoriesByProduct: async (productId: number) => {
         set({ isLoading: true, error: null });
         try {
-          // Gọi đúng route: GET /products/:id/variants (backend không có /inventories/)
-          const response = await privateClient.get(
-            `/products/${productId}/variants`
-          );
+          let response;
+          try {
+            response = await privateClient.get("/inventories", {
+              params: { productId },
+            });
+          } catch {
+            response = await privateClient.get(
+              `/products/${productId}/variants`
+            );
+          }
           const data = response.data?.data || response.data || [];
           set({ isLoading: false });
           return Array.isArray(data) ? data : [];
@@ -103,22 +109,35 @@ export const useInventoryStore = create<InventoryState>()(
       updateInventory: async (request: UpdateInventoryRequest) => {
         set({ isLoading: true, error: null });
         try {
-          // Gọi đúng route: PATCH /products/variants/:variantId/stock
-          const response = await privateClient.patch(
-            `/products/variants/${request.variantId}/stock`,
-            { quantity: request.quantity }
-          );
+          let response;
+          try {
+            response = await privateClient.patch(
+              `/inventories/${request.variantId}`,
+              { quantity: request.quantity }
+            );
+          } catch {
+            response = await privateClient.patch(
+              `/products/variants/${request.variantId}/stock`,
+              { quantity: request.quantity }
+            );
+          }
           const updatedInventory = response.data?.data || response.data;
 
           set((state) => ({
             inventories: state.inventories.map((inv) =>
               inv.productVariant?.id === request.variantId
-                ? updatedInventory
+                ? {
+                    ...inv,
+                    quantity: request.quantity,
+                    productVariant: {
+                      ...inv.productVariant,
+                      ...(updatedInventory?.productVariant || {}),
+                    },
+                  }
                 : inv
             ),
             isLoading: false,
           }));
-          toast.success("Cập nhật tồn kho thành công");
           return true;
         } catch (error) {
           const axiosError = error as AxiosError<{ message: string }>;

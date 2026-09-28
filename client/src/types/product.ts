@@ -21,6 +21,12 @@ export interface ProductImage {
   image_url?: string;
   url?: string;
   position?: number;
+  sortOrder?: number;
+  isMain?: boolean;
+  variantId?: number | null;
+  colorId?: number | null;
+  colorName?: string | null;
+  colorCode?: string | null;
 }
 
 export interface ProductVariant {

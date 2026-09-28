@@ -17,9 +17,9 @@ export default function NewsProduct({ products }: NewsProductProps) {
       ? (products as any).items
       : [];
     return rawList
-      .filter((p) => p.isPublished !== false && p.isActive !== false)
+      .filter((p: any) => p.isPublished !== false && p.isActive !== false)
       .map(convertProductToItemProps)
-      .sort((a, b) => b.id - a.id)
+      .sort((a: any, b: any) => b.id - a.id)
       .slice(0, 8);
   }, [products]);
 

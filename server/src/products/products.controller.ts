@@ -25,6 +25,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
+import { UpdateInventoryDto } from 'src/inventories/dto/update-inventory.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -57,12 +58,46 @@ export class ProductsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @UseInterceptors(FilesInterceptor('files'))
-  @ApiOperation({ summary: 'Upload product images (admin only)' })
+  @ApiOperation({ summary: 'Upload product images with optional variant association (admin only)' })
   uploadImage(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFiles() files: Express.Multer.File[],
+    @Body('variantId') bodyVariantId?: string,
+    @Query('variantId') queryVariantId?: string,
   ) {
-    return this.productsService.uploadImages(id, files);
+    const rawVid = bodyVariantId ?? queryVariantId;
+    const variantId = rawVid ? parseInt(String(rawVid), 10) : undefined;
+    return this.productsService.uploadImages(
+      id,
+      files,
+      Number.isNaN(variantId) ? undefined : variantId,
+    );
+  }
+
+  @Delete(':id/images/:imageId')
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete product image (admin only)' })
+  deleteImage(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('imageId', ParseIntPipe) imageId: number,
+  ) {
+    return this.productsService.deleteImage(id, imageId);
+  }
+
+  @Patch(':id/images/:imageId')
+  @UseGuards(AccessTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update product image classification or sort (admin only)' })
+  updateImage(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('imageId', ParseIntPipe) imageId: number,
+    @Body() body: { variantId?: number | null; isMain?: boolean; sortOrder?: number },
+  ) {
+    return this.productsService.updateImage(id, imageId, body);
   }
 
   @Put(':id')
@@ -92,7 +127,7 @@ export class ProductsController {
 
   @Get(':id/variants')
   @UseGuards(AccessTokenGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, 'admin', 'STAFF', 'staff')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get variants with stock for a product (admin only)' })
   getVariantsByProduct(@Param('id', ParseIntPipe) id: number) {
@@ -101,13 +136,13 @@ export class ProductsController {
 
   @Patch('variants/:variantId/stock')
   @UseGuards(AccessTokenGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, 'admin', 'STAFF', 'staff')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update stock count for a variant (admin only)' })
   updateVariantStock(
     @Param('variantId', ParseIntPipe) variantId: number,
-    @Body() body: { quantity: number },
+    @Body() dto: UpdateInventoryDto,
   ) {
-    return this.productsService.updateVariantStock(variantId, body.quantity);
+    return this.productsService.updateVariantStock(variantId, dto.quantity);
   }
 }
