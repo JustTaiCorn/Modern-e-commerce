@@ -130,8 +130,7 @@ export class PaymentService {
             externalId: payload.transaction?.transaction_id || '',
             status: payload.transaction?.transaction_status || 'APPROVED',
             updateTime:
-              payload.transaction?.transaction_date ||
-              new Date().toISOString(),
+              payload.transaction?.transaction_date || new Date().toISOString(),
             emailAddress: '',
             provider: 'SEPAY',
           },

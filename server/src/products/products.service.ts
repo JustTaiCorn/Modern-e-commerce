@@ -20,8 +20,16 @@ export class ProductsService {
   ) {}
 
   async findMany(query: QueryProductDto) {
-    const limit = query.limit ? Number(query.limit) : query.pageSize ? Number(query.pageSize) : 10;
-    const page = query.page ? Number(query.page) : query.current ? Number(query.current) : 1;
+    const limit = query.limit
+      ? Number(query.limit)
+      : query.pageSize
+        ? Number(query.pageSize)
+        : 10;
+    const page = query.page
+      ? Number(query.page)
+      : query.current
+        ? Number(query.current)
+        : 1;
     const rawKeyword = query.keyword ?? query.search ?? query.name;
     const keyword = rawKeyword ? decodeURIComponent(rawKeyword).trim() : '';
     const sortBy = query.sortBy ?? ProductSortBy.CREATED_AT;
@@ -138,7 +146,9 @@ export class ProductsService {
       ]);
     }
 
-    const formattedItems = products.map((product) => this.formatProduct(product));
+    const formattedItems = products.map((product) =>
+      this.formatProduct(product),
+    );
 
     return {
       items: formattedItems,
@@ -239,7 +249,9 @@ export class ProductsService {
       let colorCode: string | null = null;
 
       if (img.variantId) {
-        const matchingVariant = variants.find((v: any) => v.id === img.variantId);
+        const matchingVariant = variants.find(
+          (v: any) => v.id === img.variantId,
+        );
         if (matchingVariant && matchingVariant.attributeValues) {
           const colorAv = matchingVariant.attributeValues.find(
             (av: any) =>
@@ -475,10 +487,14 @@ export class ProductsService {
     // Build inventory-style response that client inventoryStore expects
     return variants.map((variant) => {
       const colorAv = variant.attributeValues.find(
-        (av) => av.attributeValue.type?.name?.toLowerCase() === 'color' || av.attributeValue.colorHex,
+        (av) =>
+          av.attributeValue.type?.name?.toLowerCase() === 'color' ||
+          av.attributeValue.colorHex,
       );
       const sizeAv = variant.attributeValues.find(
-        (av) => av.attributeValue.type?.name?.toLowerCase() === 'size' || !av.attributeValue.colorHex,
+        (av) =>
+          av.attributeValue.type?.name?.toLowerCase() === 'size' ||
+          !av.attributeValue.colorHex,
       );
 
       return {
@@ -488,18 +504,26 @@ export class ProductsService {
           id: variant.id,
           sku: variant.sku,
           price: variant.price,
-          product: { id: product.id, name: product.name, sku: variant.sku || '' },
+          product: {
+            id: product.id,
+            name: product.name,
+            sku: variant.sku || '',
+          },
           color: colorAv
             ? {
                 id: colorAv.attributeValue.id,
-                name: colorAv.attributeValue.displayName || colorAv.attributeValue.value,
+                name:
+                  colorAv.attributeValue.displayName ||
+                  colorAv.attributeValue.value,
                 code: colorAv.attributeValue.colorHex || '#000000',
               }
             : null,
           size: sizeAv
             ? {
                 id: sizeAv.attributeValue.id,
-                name: sizeAv.attributeValue.displayName || sizeAv.attributeValue.value,
+                name:
+                  sizeAv.attributeValue.displayName ||
+                  sizeAv.attributeValue.value,
                 code: sizeAv.attributeValue.value,
               }
             : null,

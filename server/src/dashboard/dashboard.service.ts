@@ -6,30 +6,32 @@ export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getStats() {
-    const [totalUsers, totalOrders, orders, customersCount] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.order.count(),
-      this.prisma.order.findMany({
-        where: {
-          status: { not: 'CANCELLED' },
-        },
-        select: {
-          totalPrice: true,
-          createdAt: true,
-        },
-      }),
-      this.prisma.user.count({
-        where: {
-          roles: {
-            some: {
-              role: {
-                name: { equals: 'CUSTOMER', mode: 'insensitive' },
+    const [totalUsers, totalOrders, orders, customersCount] = await Promise.all(
+      [
+        this.prisma.user.count(),
+        this.prisma.order.count(),
+        this.prisma.order.findMany({
+          where: {
+            status: { not: 'CANCELLED' },
+          },
+          select: {
+            totalPrice: true,
+            createdAt: true,
+          },
+        }),
+        this.prisma.user.count({
+          where: {
+            roles: {
+              some: {
+                role: {
+                  name: { equals: 'CUSTOMER', mode: 'insensitive' },
+                },
               },
             },
           },
-        },
-      }),
-    ]);
+        }),
+      ],
+    );
 
     const totalRevenue = orders.reduce(
       (sum, o) => sum + Number(o.totalPrice || 0),

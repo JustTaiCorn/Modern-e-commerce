@@ -8,7 +8,7 @@ export type OrderStatus =
   | "DELIVERED"
   | "CANCELLED";
 
-export type PaymentMethod = "COD" | "WALLET";
+export type PaymentMethod = "COD" | "WALLET" | "SEPAY";
 export type PaymentStatus = "UNPAID" | "PAID" | "REFUNDED" | "PARTIAL";
 
 export interface OrderItem {
@@ -55,6 +55,7 @@ export interface CreateOrderRequest {
     ward: string;
     province: string;
   };
+  couponCode?: string;
 }
 
 export interface Order {

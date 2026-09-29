@@ -67,10 +67,7 @@ export class CouponsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update coupon by ID (admin only)' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateCouponDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCouponDto) {
     return this.couponsService.update(id, dto);
   }
 

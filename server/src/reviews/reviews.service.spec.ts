@@ -81,7 +81,10 @@ describe('ReviewsService', () => {
 
     it('should throw ConflictException if user has already reviewed the product', async () => {
       mockPrisma.product.findUnique.mockResolvedValue({ id: 1 });
-      mockPrisma.order.findFirst.mockResolvedValue({ id: 10, status: 'DELIVERED' });
+      mockPrisma.order.findFirst.mockResolvedValue({
+        id: 10,
+        status: 'DELIVERED',
+      });
       mockPrisma.review.findUnique.mockResolvedValue({ id: 5, rating: 4 });
 
       await expect(service.create(1, 1, dto)).rejects.toThrow(
@@ -91,7 +94,10 @@ describe('ReviewsService', () => {
 
     it('should create review, recalculate rating, and invalidate redis cache on valid purchase', async () => {
       mockPrisma.product.findUnique.mockResolvedValue({ id: 1 });
-      mockPrisma.order.findFirst.mockResolvedValue({ id: 10, status: 'DELIVERED' });
+      mockPrisma.order.findFirst.mockResolvedValue({
+        id: 10,
+        status: 'DELIVERED',
+      });
       mockPrisma.review.findUnique.mockResolvedValue(null);
 
       const createdReview = {
@@ -107,7 +113,11 @@ describe('ReviewsService', () => {
         _avg: { rating: 5 },
         _count: { id: 1 },
       });
-      mockTx.product.update.mockResolvedValue({ id: 1, rating: 5, numReviews: 1 });
+      mockTx.product.update.mockResolvedValue({
+        id: 1,
+        rating: 5,
+        numReviews: 1,
+      });
 
       const result = await service.create(1, 1, dto);
 
@@ -187,7 +197,11 @@ describe('ReviewsService', () => {
         _avg: { rating: 4 },
         _count: { id: 1 },
       });
-      mockTx.product.update.mockResolvedValue({ id: 10, rating: 4, numReviews: 1 });
+      mockTx.product.update.mockResolvedValue({
+        id: 10,
+        rating: 4,
+        numReviews: 1,
+      });
 
       const result = await service.update(1, 1, updateDto);
 
@@ -230,11 +244,18 @@ describe('ReviewsService', () => {
         _avg: { rating: null },
         _count: { id: 0 },
       });
-      mockTx.product.update.mockResolvedValue({ id: 10, rating: 0, numReviews: 0 });
+      mockTx.product.update.mockResolvedValue({
+        id: 10,
+        rating: 0,
+        numReviews: 0,
+      });
 
       const result = await service.remove(1);
 
-      expect(result).toEqual({ success: true, message: 'Đã xóa đánh giá thành công' });
+      expect(result).toEqual({
+        success: true,
+        message: 'Đã xóa đánh giá thành công',
+      });
       expect(mockTx.review.delete).toHaveBeenCalledWith({ where: { id: 1 } });
       expect(mockTx.product.update).toHaveBeenCalledWith({
         where: { id: 10 },

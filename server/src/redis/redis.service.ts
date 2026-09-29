@@ -99,9 +99,7 @@ export class RedisService implements OnApplicationShutdown {
     try {
       return await this.client.ttl(key);
     } catch (error) {
-      this.logger.error(
-        `Failed to get TTL for key "${key}": ${error.message}`,
-      );
+      this.logger.error(`Failed to get TTL for key "${key}": ${error.message}`);
       return -1;
     }
   }

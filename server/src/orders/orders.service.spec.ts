@@ -16,6 +16,12 @@ describe('OrdersService - Atomic Stock Deduction', () => {
       order: {
         create: jest.fn(),
       },
+      cart: {
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+      cartItem: {
+        deleteMany: jest.fn(),
+      },
     };
 
     mockPrisma = {
@@ -142,9 +148,30 @@ describe('OrdersService - Atomic Stock Deduction', () => {
   it('should process variantIds in ascending order to prevent deadlocks', async () => {
     const dto: CreateOrderDto = {
       orderItems: [
-        { productId: 1, variantId: 50, name: 'Item 50', qty: 1, image: '', price: 10 },
-        { productId: 2, variantId: 10, name: 'Item 10', qty: 1, image: '', price: 20 },
-        { productId: 3, variantId: 30, name: 'Item 30', qty: 1, image: '', price: 30 },
+        {
+          productId: 1,
+          variantId: 50,
+          name: 'Item 50',
+          qty: 1,
+          image: '',
+          price: 10,
+        },
+        {
+          productId: 2,
+          variantId: 10,
+          name: 'Item 10',
+          qty: 1,
+          image: '',
+          price: 20,
+        },
+        {
+          productId: 3,
+          variantId: 30,
+          name: 'Item 30',
+          qty: 1,
+          image: '',
+          price: 30,
+        },
       ],
       shippingDetails: {
         address: '123 Test St',

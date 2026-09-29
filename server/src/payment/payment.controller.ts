@@ -66,10 +66,7 @@ export class PaymentController {
    */
   @Get('success')
   @ApiOperation({ summary: 'Payment success redirect' })
-  async handleSuccess(
-    @Query('orderId') orderId: string,
-    @Res() res: Response,
-  ) {
+  async handleSuccess(@Query('orderId') orderId: string, @Res() res: Response) {
     const clientUrl = this.getClientUrl();
     return res.redirect(
       `${clientUrl}/payment/success?orderId=${orderId || ''}`,
@@ -83,9 +80,7 @@ export class PaymentController {
   @ApiOperation({ summary: 'Payment error redirect' })
   async handleError(@Query('orderId') orderId: string, @Res() res: Response) {
     const clientUrl = this.getClientUrl();
-    return res.redirect(
-      `${clientUrl}/payment/error?orderId=${orderId || ''}`,
-    );
+    return res.redirect(`${clientUrl}/payment/error?orderId=${orderId || ''}`);
   }
 
   /**
@@ -95,9 +90,7 @@ export class PaymentController {
   @ApiOperation({ summary: 'Payment cancel redirect' })
   async handleCancel(@Query('orderId') orderId: string, @Res() res: Response) {
     const clientUrl = this.getClientUrl();
-    return res.redirect(
-      `${clientUrl}/payment/cancel?orderId=${orderId || ''}`,
-    );
+    return res.redirect(`${clientUrl}/payment/cancel?orderId=${orderId || ''}`);
   }
 
   private getClientUrl(): string {

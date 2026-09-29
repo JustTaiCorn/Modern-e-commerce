@@ -9,7 +9,7 @@ export const imageFileFilter = (
   const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif'];
 
   if (!allowedMimeTypes.includes(file.mimetype)) {
-    // @ts-ignore
+    // @ts-expect-error multer FileFilterCallback error type mismatch
     return cb(new Error('Only JPG, PNG, GIF files are allowed!'), false);
   }
 

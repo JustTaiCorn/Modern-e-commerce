@@ -31,7 +31,10 @@ export class OrdersService {
       variant: i.variant,
     }));
 
-    const totalQty = items.reduce((acc: number, cur: any) => acc + cur.quantity, 0);
+    const totalQty = items.reduce(
+      (acc: number, cur: any) => acc + cur.quantity,
+      0,
+    );
 
     return {
       ...order,
@@ -67,7 +70,11 @@ export class OrdersService {
       price: number;
     }> = [];
 
-    if (dto.orderItems && Array.isArray(dto.orderItems) && dto.orderItems.length > 0) {
+    if (
+      dto.orderItems &&
+      Array.isArray(dto.orderItems) &&
+      dto.orderItems.length > 0
+    ) {
       orderItems = dto.orderItems;
     } else {
       const cart = await this.prisma.cart.findUnique({
@@ -80,7 +87,9 @@ export class OrdersService {
       });
 
       if (!cart || cart.items.length === 0) {
-        throw new BadRequestException('No order items received and cart is empty.');
+        throw new BadRequestException(
+          'No order items received and cart is empty.',
+        );
       }
 
       orderItems = cart.items.map((ci) => ({
@@ -100,16 +109,25 @@ export class OrdersService {
         (itemQtyByVariant.get(item.variantId) || 0) + item.qty,
       );
     }
-    const sortedVariantIds = Array.from(itemQtyByVariant.keys()).sort((a, b) => a - b);
+    const sortedVariantIds = Array.from(itemQtyByVariant.keys()).sort(
+      (a, b) => a - b,
+    );
 
     const calculatedItemsPrice = orderItems.reduce(
       (sum, item) => sum + Number(item.price) * item.qty,
       0,
     );
-    const itemsPrice = dto.itemsPrice !== undefined ? Number(dto.itemsPrice) : calculatedItemsPrice;
-    const shippingPrice = dto.shippingPrice !== undefined ? Number(dto.shippingPrice) : 30000;
+    const itemsPrice =
+      dto.itemsPrice !== undefined
+        ? Number(dto.itemsPrice)
+        : calculatedItemsPrice;
+    const shippingPrice =
+      dto.shippingPrice !== undefined ? Number(dto.shippingPrice) : 30000;
     const taxPrice = dto.taxPrice !== undefined ? Number(dto.taxPrice) : 0;
-    let totalPrice = dto.totalPrice !== undefined ? Number(dto.totalPrice) : itemsPrice + shippingPrice + taxPrice;
+    let totalPrice =
+      dto.totalPrice !== undefined
+        ? Number(dto.totalPrice)
+        : itemsPrice + shippingPrice + taxPrice;
 
     if (dto.couponCode) {
       const coupon = await this.prisma.coupon.findUnique({
@@ -122,10 +140,13 @@ export class OrdersService {
 
     const shippingAddress = dto.shippingAddress || {};
     const shippingDetails = dto.shippingDetails || {};
-    const address = shippingAddress.address || shippingDetails.address || 'Địa chỉ nhận hàng';
-    const city = shippingAddress.province || shippingDetails.city || 'Hồ Chí Minh';
+    const address =
+      shippingAddress.address || shippingDetails.address || 'Địa chỉ nhận hàng';
+    const city =
+      shippingAddress.province || shippingDetails.city || 'Hồ Chí Minh';
     const postalCode = shippingDetails.postalCode || '70000';
-    const country = shippingAddress.country || shippingDetails.country || 'Vietnam';
+    const country =
+      shippingAddress.country || shippingDetails.country || 'Vietnam';
 
     return this.prisma.$transaction(async (tx) => {
       for (const variantId of sortedVariantIds) {
@@ -148,7 +169,9 @@ export class OrdersService {
           });
 
           if (!variant) {
-            throw new NotFoundException(`Product variant with ID ${variantId} not found.`);
+            throw new NotFoundException(
+              `Product variant with ID ${variantId} not found.`,
+            );
           }
 
           throw new BadRequestException(
@@ -188,7 +211,15 @@ export class OrdersService {
           },
         },
         include: {
-          user: { select: { id: true, username: true, email: true, fullName: true, phone: true } },
+          user: {
+            select: {
+              id: true,
+              username: true,
+              email: true,
+              fullName: true,
+              phone: true,
+            },
+          },
           orderItems: true,
           shippingDetail: true,
           paymentResult: true,
@@ -207,7 +238,15 @@ export class OrdersService {
   async findAll() {
     const orders = await this.prisma.order.findMany({
       include: {
-        user: { select: { id: true, username: true, email: true, fullName: true, phone: true } },
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            fullName: true,
+            phone: true,
+          },
+        },
         orderItems: true,
         shippingDetail: true,
         paymentResult: true,
@@ -221,7 +260,15 @@ export class OrdersService {
     const order = await this.prisma.order.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, username: true, email: true, fullName: true, phone: true } },
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            fullName: true,
+            phone: true,
+          },
+        },
         orderItems: true,
         shippingDetail: true,
         paymentResult: true,
@@ -236,7 +283,15 @@ export class OrdersService {
     const orders = await this.prisma.order.findMany({
       where: { userId },
       include: {
-        user: { select: { id: true, username: true, email: true, fullName: true, phone: true } },
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            fullName: true,
+            phone: true,
+          },
+        },
         orderItems: true,
         shippingDetail: true,
         paymentResult: true,
@@ -270,7 +325,15 @@ export class OrdersService {
       where: { id },
       data: updateData,
       include: {
-        user: { select: { id: true, username: true, email: true, fullName: true, phone: true } },
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            fullName: true,
+            phone: true,
+          },
+        },
         orderItems: true,
         shippingDetail: true,
         paymentResult: true,
@@ -291,10 +354,12 @@ export class OrdersService {
     return this.prisma.$transaction(async (tx) => {
       for (const item of order.orderItems) {
         if (item.variantId) {
-          await tx.productVariant.update({
-            where: { id: item.variantId },
-            data: { countInStock: { increment: item.qty } },
-          }).catch(() => {});
+          await tx.productVariant
+            .update({
+              where: { id: item.variantId },
+              data: { countInStock: { increment: item.qty } },
+            })
+            .catch(() => {});
         }
       }
 
@@ -306,7 +371,15 @@ export class OrdersService {
           cancelReason: reason || 'Đã hủy đơn hàng',
         },
         include: {
-          user: { select: { id: true, username: true, email: true, fullName: true, phone: true } },
+          user: {
+            select: {
+              id: true,
+              username: true,
+              email: true,
+              fullName: true,
+              phone: true,
+            },
+          },
           orderItems: true,
           shippingDetail: true,
           paymentResult: true,
@@ -336,7 +409,15 @@ export class OrdersService {
         },
       },
       include: {
-        user: { select: { id: true, username: true, email: true, fullName: true, phone: true } },
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            fullName: true,
+            phone: true,
+          },
+        },
         orderItems: true,
         shippingDetail: true,
         paymentResult: true,

@@ -14,10 +14,8 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
-import { Roles } from 'src/auth/decorators/roles.decorator';
 import { Role } from 'src/auth/enums/role.enum';
 import { AccessTokenGuard } from 'src/auth/guards/access-token.guard';
-import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
@@ -32,7 +30,8 @@ export class ReviewsController {
   @UseGuards(AccessTokenGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Tạo đánh giá sản phẩm (yêu cầu đơn hàng đã nhận thành công - DELIVERED)',
+    summary:
+      'Tạo đánh giá sản phẩm (yêu cầu đơn hàng đã nhận thành công - DELIVERED)',
   })
   create(
     @Param('productId', ParseIntPipe) productId: number,
@@ -43,7 +42,9 @@ export class ReviewsController {
   }
 
   @Get('products/:productId/reviews')
-  @ApiOperation({ summary: 'Lấy danh sách đánh giá của sản phẩm có phân trang' })
+  @ApiOperation({
+    summary: 'Lấy danh sách đánh giá của sản phẩm có phân trang',
+  })
   findByProduct(
     @Param('productId', ParseIntPipe) productId: number,
     @Query() query: QueryReviewDto,

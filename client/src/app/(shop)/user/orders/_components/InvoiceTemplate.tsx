@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { OrderStatusBadge } from "./StatusBadges";
 import { formatDate, formatPrice } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import { Button } from "@/components/ui/button";
 import { Order } from "@/types";
+import { createSepayCheckout, submitSepayForm } from "@/services/paymentService";
+import { toast } from "sonner";
 
 interface InvoiceTemplateProps {
   order: Order;
@@ -12,6 +15,40 @@ interface InvoiceTemplateProps {
 
 export function InvoiceTemplate({ order }: InvoiceTemplateProps) {
   const { authUser } = useAuthStore();
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+
+  // Check if order needs online payment
+  const needsPayment =
+    (order.paymentMethod === "WALLET" || (order.paymentMethod as string) === "SEPAY") &&
+    order.paymentStatus === "UNPAID" &&
+    order.status !== "CANCELLED";
+
+  // Handle online payment via SePay
+  const handleOnlinePayment = async () => {
+    if (!order.id) {
+      toast.error("Không tìm thấy thông tin đơn hàng");
+      return;
+    }
+
+    setIsPaymentLoading(true);
+    try {
+      toast.info("Đang chuyển tới cổng thanh toán SePay...");
+      const sepayRes = await createSepayCheckout(
+        order.id,
+        authUser ? `USER_${authUser.id}` : undefined
+      );
+
+      if (!sepayRes?.checkoutUrl || !sepayRes?.fields) {
+        throw new Error("Không nhận được thông tin thanh toán từ SePay");
+      }
+
+      submitSepayForm(sepayRes.checkoutUrl, sepayRes.fields);
+    } catch {
+      toast.error("Không thể tạo liên kết thanh toán. Vui lòng thử lại.");
+    } finally {
+      setIsPaymentLoading(false);
+    }
+  };
 
   // Parse shipping address snapshot
   const getShippingInfo = () => {
@@ -163,7 +200,11 @@ export function InvoiceTemplate({ order }: InvoiceTemplateProps) {
               Phương thức thanh toán
             </h3>
             <p className="text-gray-900 font-medium">
-              {order.paymentMethod === "COD" ? "Thanh toán khi nhận hàng (COD)" : "Ví điện tử / VNPAY"}
+              {order.paymentMethod === "COD"
+                ? "Thanh toán khi nhận hàng (COD)"
+                : order.paymentMethod === "SEPAY"
+                ? "Thanh toán trực tuyến (SePay QR)"
+                : "Ví điện tử / VNPAY"}
             </p>
           </div>
           <div>
@@ -194,21 +235,21 @@ export function InvoiceTemplate({ order }: InvoiceTemplateProps) {
           </div>
         </div>
 
-        {/* VNPay Payment Button */}
-        {needsVNPayPayment && (
+        {/* Payment Button */}
+        {needsPayment && (
           <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
             <Button
-              onClick={handleVNPayPayment}
+              onClick={handleOnlinePayment}
               disabled={isPaymentLoading}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 py-2"
             >
               {isPaymentLoading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Đang chuyển tới VNPay...
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                  Đang chuyển tới cổng thanh toán...
                 </>
               ) : (
-                "Thanh toán ngay qua VNPay"
+                "Thanh toán ngay qua SePay"
               )}
             </Button>
           </div>

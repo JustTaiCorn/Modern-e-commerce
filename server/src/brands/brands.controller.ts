@@ -57,10 +57,7 @@ export class BrandsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update brand by ID (admin only)' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateBrandDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBrandDto) {
     return this.brandsService.update(id, dto);
   }
 

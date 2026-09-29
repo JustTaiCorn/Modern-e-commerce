@@ -12,13 +12,14 @@ import { map } from 'rxjs/operators';
 export interface Response<T> {
   statusCode: number;
   message?: string;
-  data: any;
+  data: T;
 }
 
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, Response<T>>
-{
+export class TransformInterceptor<T> implements NestInterceptor<
+  T,
+  Response<T>
+> {
   constructor(private reflector: Reflector) {}
 
   intercept(
@@ -29,10 +30,8 @@ export class TransformInterceptor<T>
       map((data) => ({
         statusCode: context.switchToHttp().getResponse().statusCode,
         message:
-          this.reflector.get<string>(
-            RESPONSE_MESSAGE,
-            context.getHandler(),
-          ) || '',
+          this.reflector.get<string>(RESPONSE_MESSAGE, context.getHandler()) ||
+          '',
         data: data,
       })),
     );

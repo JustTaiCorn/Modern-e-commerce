@@ -158,7 +158,11 @@ export function InvoiceTemplate({ order }: InvoiceTemplateProps) {
               Phương thức thanh toán
             </h3>
             <p className="text-gray-900 font-medium text-sm">
-              {order.paymentMethod === "COD" ? "Thanh toán khi nhận hàng (COD)" : "Ví điện tử / VNPAY"}
+              {order.paymentMethod === "COD"
+                ? "Thanh toán khi nhận hàng (COD)"
+                : order.paymentMethod === "SEPAY"
+                ? "Thanh toán trực tuyến (SePay QR)"
+                : "Ví điện tử / VNPAY"}
             </p>
           </div>
           <div>

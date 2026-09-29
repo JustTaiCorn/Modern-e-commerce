@@ -61,9 +61,11 @@ export class UsersService {
     // If roleIds or role specified
     if (dto.roleIds && Array.isArray(dto.roleIds) && dto.roleIds.length > 0) {
       for (const roleId of dto.roleIds) {
-        await this.prisma.userRole.create({
-          data: { userId: user.id, roleId },
-        }).catch(() => {});
+        await this.prisma.userRole
+          .create({
+            data: { userId: user.id, roleId },
+          })
+          .catch(() => {});
       }
     } else if (dto.role) {
       const roleName = String(dto.role).toUpperCase();
@@ -73,9 +75,11 @@ export class UsersService {
       if (!role) {
         role = await this.prisma.role.create({ data: { name: roleName } });
       }
-      await this.prisma.userRole.create({
-        data: { userId: user.id, roleId: role.id },
-      }).catch(() => {});
+      await this.prisma.userRole
+        .create({
+          data: { userId: user.id, roleId: role.id },
+        })
+        .catch(() => {});
     }
 
     return this.findOne(user.id);
@@ -189,7 +193,10 @@ export class UsersService {
     return this.mapUser(updated);
   }
 
-  async assignRole(id: number, rolePayload: { id?: number; name?: string; roleId?: number }) {
+  async assignRole(
+    id: number,
+    rolePayload: { id?: number; name?: string; roleId?: number },
+  ) {
     await this.findOne(id);
 
     let targetRoleId = rolePayload.roleId || rolePayload.id;
@@ -200,7 +207,9 @@ export class UsersService {
         where: { name: { equals: roleName, mode: 'insensitive' } },
       });
       if (!role) {
-        role = await this.prisma.role.create({ data: { name: roleName.toUpperCase() } });
+        role = await this.prisma.role.create({
+          data: { name: roleName.toUpperCase() },
+        });
       }
       targetRoleId = role.id;
     }

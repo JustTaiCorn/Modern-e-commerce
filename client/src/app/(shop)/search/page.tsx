@@ -24,14 +24,6 @@ function SearchContent() {
   const [displayCount, setDisplayCount] = useState(12);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  useEffect(() => {
-    if (query.trim()) {
-      searchProducts(query);
-    } else {
-      setProducts([]);
-    }
-  }, [query]);
-
   const searchProducts = async (searchQuery: string) => {
     setIsLoading(true);
     try {
@@ -57,6 +49,14 @@ function SearchContent() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (query.trim()) {
+      searchProducts(query);
+    } else {
+      setProducts([]);
+    }
+  }, [query]);
 
   const displayedProducts = useMemo(() => {
     return products

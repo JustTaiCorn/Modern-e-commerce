@@ -94,7 +94,9 @@ export class ReviewsService {
 
     // Chỉ chính chủ mới được sửa
     if (review.userId !== userId) {
-      throw new ForbiddenException('Bạn không có quyền chỉnh sửa đánh giá này.');
+      throw new ForbiddenException(
+        'Bạn không có quyền chỉnh sửa đánh giá này.',
+      );
     }
 
     const updatedReview = await this.prisma.$transaction(async (tx) => {

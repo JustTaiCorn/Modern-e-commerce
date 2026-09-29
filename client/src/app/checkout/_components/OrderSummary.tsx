@@ -17,7 +17,7 @@ interface OrderSummaryProps {
   availableCoupons: Coupon[];
   showCouponList: boolean;
   isSubmitting: boolean;
-  paymentMethod?: "COD" | "WALLET";
+  paymentMethod?: "COD" | "WALLET" | "SEPAY" | string;
   onToggleCouponList: () => void;
   onApplyCoupon: (couponCode: string) => void;
   onRemoveCoupon: () => void;

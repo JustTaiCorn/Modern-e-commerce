@@ -102,7 +102,7 @@ export class CouponsService {
   }
 
   async uploadImage(id: number, file: Express.Multer.File) {
-    const coupon = await this.findOne(id);
+    await this.findOne(id);
     const uploadResult = await this.cloudinary.uploadImage(file);
     const imageUrl = (uploadResult as any).secure_url || uploadResult.url;
 

@@ -58,7 +58,10 @@ export class ProductsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @UseInterceptors(FilesInterceptor('files'))
-  @ApiOperation({ summary: 'Upload product images with optional variant association (admin only)' })
+  @ApiOperation({
+    summary:
+      'Upload product images with optional variant association (admin only)',
+  })
   uploadImage(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFiles() files: Express.Multer.File[],
@@ -91,11 +94,14 @@ export class ProductsController {
   @UseGuards(AccessTokenGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update product image classification or sort (admin only)' })
+  @ApiOperation({
+    summary: 'Update product image classification or sort (admin only)',
+  })
   updateImage(
     @Param('id', ParseIntPipe) id: number,
     @Param('imageId', ParseIntPipe) imageId: number,
-    @Body() body: { variantId?: number | null; isMain?: boolean; sortOrder?: number },
+    @Body()
+    body: { variantId?: number | null; isMain?: boolean; sortOrder?: number },
   ) {
     return this.productsService.updateImage(id, imageId, body);
   }
@@ -106,10 +112,7 @@ export class ProductsController {
   @Roles(Role.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update product by ID (admin only)' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateProductDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProductDto) {
     return this.productsService.update(id, dto);
   }
 
@@ -129,7 +132,9 @@ export class ProductsController {
   @UseGuards(AccessTokenGuard, RolesGuard)
   @Roles(Role.ADMIN, 'admin', 'STAFF', 'staff')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get variants with stock for a product (admin only)' })
+  @ApiOperation({
+    summary: 'Get variants with stock for a product (admin only)',
+  })
   getVariantsByProduct(@Param('id', ParseIntPipe) id: number) {
     return this.productsService.getVariantsByProduct(id);
   }

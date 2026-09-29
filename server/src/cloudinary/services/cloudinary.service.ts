@@ -25,7 +25,7 @@ export class CloudinaryService {
   }
 
   async uploadImages(images: string[]): Promise<string[]> {
-    const uploadPromises = images.map(async imageUrl => {
+    const uploadPromises = images.map(async (imageUrl) => {
       const response = await fetch(imageUrl);
       const buffer = Buffer.from(await response.arrayBuffer());
 
@@ -47,5 +47,9 @@ export class CloudinaryService {
     });
 
     return Promise.all(uploadPromises);
+  }
+
+  async deleteImage(publicId: string): Promise<any> {
+    return v2.uploader.destroy(publicId);
   }
 }

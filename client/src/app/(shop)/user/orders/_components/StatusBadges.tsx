@@ -64,6 +64,10 @@ export function PaymentMethodBadge({ method }: PaymentMethodBadgeProps) {
       label: "Ví điện tử / VNPAY",
       className: "bg-blue-50 text-blue-700 border-blue-200",
     },
+    SEPAY: {
+      label: "SePay QR",
+      className: "bg-blue-50 text-blue-700 border-blue-200",
+    },
   }[method] || {
     label: method,
     className: "bg-gray-50 text-gray-700 border-gray-200",

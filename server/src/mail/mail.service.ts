@@ -16,7 +16,10 @@ export class MailService {
     username: string,
     token: string,
   ): Promise<void> {
-    const clientUrl = this.configService.get<string>('CLIENT_URL', 'http://localhost:3000');
+    const clientUrl = this.configService.get<string>(
+      'CLIENT_URL',
+      'http://localhost:3000',
+    );
     const verificationUrl = `${clientUrl}/v1/auth/verify-email?token=${token}`;
 
     try {

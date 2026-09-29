@@ -87,6 +87,10 @@ export function PaymentMethodBadge({
       label: "Ví điện tử / VNPAY",
       className: "bg-blue-50 text-blue-700 border-blue-200",
     },
+    SEPAY: {
+      label: "SePay QR",
+      className: "bg-blue-50 text-blue-700 border-blue-200",
+    },
   };
 
   const config = methodConfig[method] || {
