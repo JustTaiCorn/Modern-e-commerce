@@ -36,13 +36,15 @@ WORKDIR /usr/src/app
 
 ENV NODE_ENV=production
 
-RUN corepack enable pnpm
+# Cài đặt OpenSSL cho Prisma Engine
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 # Chỉ copy những file cần thiết từ builder
 COPY --from=builder /usr/src/app/package.json ./
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
+COPY --from=builder /usr/src/app/prisma.config.ts ./
 COPY --from=builder /usr/src/app/generated ./generated
 
 # Phân quyền cho non-root user 'node'
@@ -52,4 +54,4 @@ USER node
 EXPOSE 3000
 
 # Tự động migrate database trước khi start server
-CMD ["sh", "-c", "pnpm prisma migrate deploy && node dist/main"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && if [ -f dist/src/main.js ]; then node dist/src/main.js; else node dist/main.js; fi"]

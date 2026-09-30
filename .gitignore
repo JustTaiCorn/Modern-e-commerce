@@ -67,3 +67,11 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # Prisma generated
 generated/
 /generated/prisma
+
+# Deployment secrets & logs
+.env_backend
+deploy.log
+*.dump
+*.sql
+
+

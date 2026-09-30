@@ -39,7 +39,7 @@ async function bootstrap() {
     setupSwagger(app);
   }
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
   const appUrl = await app.getUrl();
   console.log(`Application is running on: ${appUrl}`);
   if (process.env.NODE_ENV !== 'production') {

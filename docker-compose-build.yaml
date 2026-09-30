@@ -1,0 +1,15 @@
+services:
+  reverse_proxy_service:
+    build:
+      context: ./reverse_proxy
+    image: ${REGISTRY}/ecommerce-proxy:${VERSION}
+
+  frontend_service:
+    build:
+      context: ./client
+    image: ${REGISTRY}/ecommerce-frontend:${VERSION}
+
+  backend_service:
+    build:
+      context: ./server
+    image: ${REGISTRY}/ecommerce-backend:${VERSION}

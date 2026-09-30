@@ -1,0 +1,87 @@
+services:
+  reverse_proxy_service:
+    image: ${REGISTRY}/ecommerce-proxy:${VERSION}
+    ports:
+      - "80:8888"
+    networks: [frontnet, backnet]
+    depends_on:
+      frontend_service:
+        condition: service_started
+      backend_service:
+        condition: service_healthy
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  frontend_service:
+    image: ${REGISTRY}/ecommerce-frontend:${VERSION}
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      HOSTNAME: "0.0.0.0"
+    networks: [frontnet]
+    restart: always
+
+  backend_service:
+    image: ${REGISTRY}/ecommerce-backend:${VERSION}
+    env_file: .env_backend
+    networks: [backnet]
+    restart: always
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/v1/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgres_service:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks: [backnet]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: always
+
+  redis_service:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    networks: [backnet]
+    restart: always
+
+volumes:
+  pg_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /opt/ecommerce/postgres
+      o: bind
+  redis_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /opt/ecommerce/redis
+      o: bind
+
+networks:
+  frontnet:
+  backnet:
