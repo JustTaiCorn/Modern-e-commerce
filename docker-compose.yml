@@ -33,7 +33,7 @@ services:
 
   app:
     build:
-      context: .
+      context: ./server
       dockerfile: Dockerfile
     container_name: ecommerce_app
     restart: unless-stopped
