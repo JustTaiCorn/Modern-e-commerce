@@ -19,6 +19,7 @@ import { ColorsModule } from './colors/colors.module';
 import { SizesModule } from './sizes/sizes.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { InventoriesModule } from './inventories/inventories.module';
+import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { InventoriesModule } from './inventories/inventories.module';
     SizesModule,
     DashboardModule,
     InventoriesModule,
+    AiAssistantModule,
   ],
   controllers: [AppController],
   providers: [AppService],

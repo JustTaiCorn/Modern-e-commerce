@@ -204,8 +204,8 @@ export function AppSidebar() {
     <>
       <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
         {/* Brand Header */}
-        <SidebarHeader className="border-b border-sidebar-border/60 h-14 flex justify-center px-4">
-          <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden">
+        <SidebarHeader className="border-b border-sidebar-border/60 h-14 flex items-center justify-center px-4 group-data-[collapsible=icon]:px-0">
+          <div className="flex flex-col truncate group-data-[collapsible=icon]:hidden w-full">
             <div className="flex items-center gap-1.5 font-bold tracking-tight text-foreground text-sm leading-none">
               <span>ATINO STORE</span>
               <span className="rounded bg-blue-50 dark:bg-blue-950/60 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300">
@@ -216,10 +216,16 @@ export function AppSidebar() {
               Hệ thống Quản trị
             </span>
           </div>
+          {/* Collapsed Brand Icon */}
+          <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shadow-xs">
+              A
+            </div>
+          </div>
         </SidebarHeader>
 
         {/* Content Navigation */}
-        <SidebarContent className="px-2 py-2">
+        <SidebarContent className="px-2 py-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-2">
           {menuGroups.map((group) => {
             const visibleItems = group.items.filter((item) => {
               if (!item.requireRole) return true;
@@ -231,12 +237,12 @@ export function AppSidebar() {
             if (visibleItems.length === 0) return null;
 
             return (
-              <SidebarGroup key={group.groupLabel} className="py-1">
+              <SidebarGroup key={group.groupLabel} className="py-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-1">
                 <SidebarGroupLabel className="text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase px-2 mb-1 group-data-[collapsible=icon]:hidden">
                   {group.groupLabel}
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
-                  <SidebarMenu>
+                  <SidebarMenu className="group-data-[collapsible=icon]:items-center">
                     {visibleItems.map((item) => {
                       if (item.children) {
                         const hasActiveChild = item.children.some((child) =>
@@ -250,7 +256,7 @@ export function AppSidebar() {
                             defaultOpen={hasActiveChild || true}
                             className="group/collapsible"
                           >
-                            <SidebarMenuItem>
+                            <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
                               <CollapsibleTrigger asChild>
                                 <SidebarMenuButton
                                   tooltip={item.title}
@@ -259,7 +265,7 @@ export function AppSidebar() {
                                 >
                                   <item.icon className="size-4 shrink-0 text-muted-foreground group-data-[active=true]/menu-button:text-primary" />
                                   <span className="truncate">{item.title}</span>
-                                  <ChevronRight className="ml-auto size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                                  <ChevronRight className="ml-auto size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
                                 </SidebarMenuButton>
                               </CollapsibleTrigger>
                               <CollapsibleContent>
@@ -291,7 +297,7 @@ export function AppSidebar() {
                       const active = isUrlActive(item.url);
 
                       return (
-                        <SidebarMenuItem key={item.title}>
+                        <SidebarMenuItem key={item.title} className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
                           <SidebarMenuButton
                             asChild
                             tooltip={item.title}
@@ -314,14 +320,14 @@ export function AppSidebar() {
         </SidebarContent>
 
         {/* User Profile Footer */}
-        <SidebarFooter className="border-t border-sidebar-border/60 p-2">
-          <SidebarMenu>
-            <SidebarMenuItem>
+        <SidebarFooter className="border-t border-sidebar-border/60 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-2">
+          <SidebarMenu className="group-data-[collapsible=icon]:items-center">
+            <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton
                     size="lg"
-                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:p-0!"
                   >
                     <Avatar className="size-8 rounded-lg">
                       <AvatarFallback className="rounded-lg bg-primary/10 font-bold text-xs text-primary">

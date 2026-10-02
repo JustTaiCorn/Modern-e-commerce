@@ -18,8 +18,10 @@ import {
   Ruler,
   Star,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
+import useAuthStore from "@/stores/useAuthStore";
 import { formatPrice } from "@/lib/utils";
 import {
   Breadcrumb,
@@ -30,10 +32,10 @@ import {
 } from "@/components/ui/breadcrumb";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import privateClient from "@/lib/axios";
+import { useQueryClient } from "@tanstack/react-query";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 import ProductTabs from "@/app/products/_components/ProductTabs";
+import { useProductQuery } from "@/services/productService";
 import { useReviewsByProduct } from "@/services/reviewsService";
 import { Color, Product, Review, Size } from "@/types";
 
@@ -41,24 +43,23 @@ export default function ProductDetailPage() {
   const { productId } = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
-  const {
-    data: product,
-    isLoading,
-  }: { data: Product | undefined; isLoading: boolean } = useQuery({
-    queryKey: ["product", parseInt(productId as string)],
-    queryFn: async () => {
-      const response = await privateClient.get(`/products/${productId}`);
-      return response.data?.data || response.data;
-    },
-    enabled: !!productId,
-  });
+  const numericProductId = useMemo(() => {
+    const id = Array.isArray(productId) ? productId[0] : productId;
+    return id ? parseInt(id, 10) : 0;
+  }, [productId]);
 
-  const { data: reviews }: { data: Review[] | undefined } = useReviewsByProduct(
-    product ? product.id : 0
-  );
+  // Eliminating waterfalls: fetch product and reviews in parallel
+  const { data: product, isLoading } = useProductQuery(numericProductId);
+  const { data: reviews } = useReviewsByProduct(numericProductId);
 
-  const { addToCart, buyNow, items } = useCartStore();
+  // Rerender optimization: atomic selectors from Zustand stores
+  const addToCart = useCartStore((s) => s.addToCart);
+  const buyNow = useCartStore((s) => s.buyNow);
+  const cartItems = useCartStore((s) => s.items);
+  const authUser = useAuthStore((s) => s.authUser);
+
   const orderId = parseInt(searchParams.get("orderId") || "0", 10);
 
   const [activeTab, setActiveTab] = useState("description");
@@ -67,6 +68,8 @@ export default function ProductDetailPage() {
   const [selectedColor, setSelectedColor] = useState<Color | null>(null);
   const [selectedSize, setSelectedSize] = useState<Size | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
 
   useEffect(() => {
     const shouldReview = searchParams.get("review");
@@ -239,11 +242,14 @@ export default function ProductDetailPage() {
 
   const quantityInCart = useMemo(() => {
     if (!selectedVariant) return 0;
-    const cartItem = items.find(
-      (item) => item.variant?.id === selectedVariant.id
+    const cartItem = cartItems.find(
+      (item) =>
+        item.variant?.id === selectedVariant.id ||
+        item.productVariantId === selectedVariant.id ||
+        item.variant_id === selectedVariant.id
     );
     return cartItem ? cartItem.quantity : 0;
-  }, [selectedVariant, items]);
+  }, [selectedVariant, cartItems]);
 
   const maxQuantity = useMemo(() => {
     const remaining = selectedStock - quantityInCart;
@@ -276,6 +282,19 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = async () => {
+    if (isAddingToCart || isBuyingNow) return;
+
+    if (!authUser) {
+      toast.error("Vui lòng đăng nhập để thêm vào giỏ hàng", {
+        action: {
+          label: "Đăng nhập",
+          onClick: () => router.push(`/user/login?redirect=/products/${numericProductId}`),
+        },
+      });
+      router.push(`/user/login?redirect=/products/${numericProductId}`);
+      return;
+    }
+
     if (availableSizes.length > 0 && !selectedSize) {
       toast.error("Vui lòng chọn kích cỡ");
       return;
@@ -289,8 +308,8 @@ export default function ProductDetailPage() {
       return;
     }
 
-    if (maxQuantity === 0) {
-      toast.error("Bạn đã thêm hết số lượng có sẵn vào giỏ hàng");
+    if (maxQuantity <= 0) {
+      toast.error("Bạn đã thêm hết số lượng có sẵn của phiên bản này vào giỏ hàng");
       return;
     }
 
@@ -299,16 +318,46 @@ export default function ProductDetailPage() {
       return;
     }
 
+    setIsAddingToCart(true);
     try {
       await addToCart(selectedVariant, quantity);
-      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`);
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      const variantDetails = [
+        selectedSize?.code || selectedSize?.name ? `Size ${selectedSize?.code || selectedSize?.name}` : "",
+        selectedColor?.name ? `Màu ${selectedColor.name}` : "",
+      ]
+        .filter(Boolean)
+        .join(" - ");
+
+      toast.success(`Đã thêm ${quantity} sản phẩm vào giỏ hàng!`, {
+        description: variantDetails ? `${product?.name} (${variantDetails})` : product?.name,
+        action: {
+          label: "Xem giỏ hàng",
+          onClick: () => router.push("/cart"),
+        },
+      });
       setQuantity(1);
     } catch {
-      // store đã tự toast.error rồi, không làm gì thêm
+      // Error đã được hiển thị toast qua cartStore
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
   const handleBuyNow = async () => {
+    if (isAddingToCart || isBuyingNow) return;
+
+    if (!authUser) {
+      toast.error("Vui lòng đăng nhập để tiến hành mua hàng", {
+        action: {
+          label: "Đăng nhập",
+          onClick: () => router.push(`/user/login?redirect=/products/${numericProductId}`),
+        },
+      });
+      router.push(`/user/login?redirect=/products/${numericProductId}`);
+      return;
+    }
+
     if (availableSizes.length > 0 && !selectedSize) {
       toast.error("Vui lòng chọn kích cỡ");
       return;
@@ -327,11 +376,15 @@ export default function ProductDetailPage() {
       return;
     }
 
+    setIsBuyingNow(true);
     try {
       await buyNow(selectedVariant, quantity);
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
       router.push("/checkout");
     } catch {
-      toast.error("Có lỗi xảy ra khi tiến hành mua hàng");
+      // Error đã được hiển thị toast qua cartStore
+    } finally {
+      setIsBuyingNow(false);
     }
   };
 
@@ -716,21 +769,39 @@ export default function ProductDetailPage() {
               <Button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={isOutOfStock}
-                className="w-full h-12 rounded-xl bg-foreground text-background hover:bg-foreground/90 font-bold text-sm tracking-wide shadow-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-99"
+                disabled={isOutOfStock || isAddingToCart || isBuyingNow}
+                className="w-full h-12 rounded-xl bg-foreground text-background hover:bg-foreground/90 font-bold text-sm tracking-wide shadow-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-99 disabled:opacity-50"
               >
-                <ShoppingBag className="size-4.5" />
-                <span>{isOutOfStock ? "Sản phẩm đã hết hàng" : "Thêm vào giỏ hàng"}</span>
+                {isAddingToCart ? (
+                  <>
+                    <Loader2 className="size-4.5 animate-spin" />
+                    <span>Đang thêm vào giỏ...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="size-4.5" />
+                    <span>{isOutOfStock ? "Sản phẩm đã hết hàng" : "Thêm vào giỏ hàng"}</span>
+                  </>
+                )}
               </Button>
 
               <Button
                 type="button"
                 onClick={handleBuyNow}
-                disabled={isOutOfStock}
-                className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm tracking-wide shadow-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-99"
+                disabled={isOutOfStock || isAddingToCart || isBuyingNow}
+                className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm tracking-wide shadow-sm transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-99 disabled:opacity-50"
               >
-                <Zap className="size-4.5" />
-                <span>Mua ngay — Giao hàng siêu tốc</span>
+                {isBuyingNow ? (
+                  <>
+                    <Loader2 className="size-4.5 animate-spin" />
+                    <span>Đang xử lý mua ngay...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="size-4.5" />
+                    <span>Mua ngay — Giao hàng siêu tốc</span>
+                  </>
+                )}
               </Button>
             </div>
           </div>

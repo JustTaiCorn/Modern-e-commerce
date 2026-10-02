@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useState, useMemo, useEffect, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -81,7 +81,8 @@ function CheckoutContent() {
 
   useEffect(() => {
     fetchProvinces();
-  }, [fetchProvinces]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("COD");
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
@@ -123,14 +124,31 @@ function CheckoutContent() {
       .filter((item): item is EnrichedCartItem => item !== null);
   }, [items, products]);
 
-  useEffect(() => {
-    if (authUser) {
-      fetchAddresses?.();
-      const defaultAddr =
-        authUser.addresses?.find((addr) => addr.isDefault) ||
-        authUser.addresses?.[0];
+  const hasInitializedAddressRef = useRef(false);
+  const authUserId = authUser?.id;
+  const addresses = authUser?.addresses;
 
-      if (defaultAddr) {
+  // 1. Fetch addresses only when authUser.id exists/changes (once per login session)
+  useEffect(() => {
+    if (authUserId) {
+      fetchAddresses?.();
+    }
+  }, [authUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 2. Initialize default address form once loaded
+  useEffect(() => {
+    if (!authUser) {
+      setIsNewAddress(true);
+      return;
+    }
+
+    if (selectedAddressId !== null) return;
+
+    if (addresses && addresses.length > 0) {
+      const defaultAddr =
+        addresses.find((addr) => addr.isDefault) || addresses[0];
+
+      if (defaultAddr && !hasInitializedAddressRef.current) {
         setSelectedAddressId(defaultAddr.id);
         setIsNewAddress(false);
         reset({
@@ -142,22 +160,24 @@ function CheckoutContent() {
           province: defaultAddr.province || "",
           provinceCode: "",
         });
-      } else {
-        setIsNewAddress(true);
-        reset({
-          fullName: authUser.fullName,
-          phone: authUser.phone || "",
-          address: "",
-          ward: "",
-          wardCode: "",
-          province: "",
-          provinceCode: "",
-        });
+        hasInitializedAddressRef.current = true;
       }
-    } else {
+    } else if (!hasInitializedAddressRef.current) {
       setIsNewAddress(true);
+      reset({
+        fullName: authUser.fullName,
+        phone: authUser.phone || "",
+        address: "",
+        ward: "",
+        wardCode: "",
+        province: "",
+        provinceCode: "",
+      });
+      if (addresses !== undefined) {
+        hasInitializedAddressRef.current = true;
+      }
     }
-  }, [authUser, reset, fetchAddresses]);
+  }, [authUser?.fullName, authUser?.phone, addresses, selectedAddressId, reset]);
 
   // Handle VNPay / Sepay callback params
   useEffect(() => {
@@ -281,7 +301,7 @@ function CheckoutContent() {
 
       if (paymentMethod === "SEPAY") {
         // Tạo SePay checkout session từ server
-        toast.info("Đang chuyển tới cổng thanh toán SePay...");
+        toast.info("Đang chuyển tới cổng thanh toán SePay ở tab mới...");
         const sepayRes = await createSepayCheckout(
           createdOrder.id,
           `USER_${authUser.id}`
@@ -291,12 +311,15 @@ function CheckoutContent() {
           throw new Error("Không nhận được thông tin thanh toán từ SePay");
         }
 
-        // Xóa giỏ hàng trước khi redirect
+        // Xóa giỏ hàng
         await clearCart();
         setAppliedCoupon(null);
 
-        // POST form lên SePay — bắt buộc POST, không được dùng window.location.href
-        submitSepayForm(sepayRes.checkoutUrl, sepayRes.fields);
+        // POST form lên SePay sang tab mới
+        submitSepayForm(sepayRes.checkoutUrl, sepayRes.fields, "_blank");
+
+        toast.success("Đơn hàng đã được tạo! Vui lòng hoàn tất thanh toán ở tab mới.");
+        router.push("/user/orders");
         return;
       }
 

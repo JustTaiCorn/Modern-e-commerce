@@ -1,8 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
 import { Prisma } from 'generated/prisma/client';
 import { PrismaService } from '../prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { CloudinaryService } from '../cloudinary/services/cloudinary.service';
+import { AiAssistantService } from '../ai-assistant/ai-assistant.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import {
@@ -13,10 +19,14 @@ import {
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly cloudinary: CloudinaryService,
+    @Optional()
+    private readonly aiAssistantService?: AiAssistantService,
   ) {}
 
   async findMany(query: QueryProductDto) {
@@ -299,7 +309,7 @@ export class ProductsService {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-');
 
-    return this.prisma.product.create({
+    const product = await this.prisma.product.create({
       data: {
         name,
         slug,
@@ -331,6 +341,17 @@ export class ProductsService {
         },
       },
     });
+
+    this.aiAssistantService
+      ?.syncProductEmbedding(product.id)
+      .catch((err) =>
+        this.logger.error(
+          `Failed to sync product embedding for product #${product.id}: ${err.message}`,
+          err.stack,
+        ),
+      );
+
+    return product;
   }
 
   async update(id: number, dto: UpdateProductDto) {
@@ -351,6 +372,16 @@ export class ProductsService {
 
     // ponytail: Xóa cache khi cập nhật sản phẩm
     await this.redis.del(`product:${id}`);
+
+    this.aiAssistantService
+      ?.syncProductEmbedding(id)
+      .catch((err) =>
+        this.logger.error(
+          `Failed to sync product embedding for product #${id}: ${err.message}`,
+          err.stack,
+        ),
+      );
+
     return updated;
   }
 

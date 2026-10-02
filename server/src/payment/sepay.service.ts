@@ -18,7 +18,7 @@ export class SepayService {
 
   /**
    * Generate HMAC-SHA256 signature for SePay checkout form.
-   * Only the specified signed fields are included in the signature.
+   * Only the specified signed fields with actual values are included in the signature.
    */
   generateSignature(fields: Record<string, string>): string {
     const signedFieldNames = [
@@ -30,7 +30,6 @@ export class SepayService {
       'order_invoice_number',
       'order_description',
       'customer_id',
-      'notify_url',
       'success_url',
       'error_url',
       'cancel_url',
@@ -39,8 +38,8 @@ export class SepayService {
     const signed: string[] = [];
 
     for (const field of signedFieldNames) {
-      if (fields[field] !== undefined) {
-        signed.push(`${field}=${fields[field] ?? ''}`);
+      if (fields[field] !== undefined && fields[field] !== '') {
+        signed.push(`${field}=${fields[field]}`);
       }
     }
 
@@ -54,8 +53,8 @@ export class SepayService {
 
   /**
    * Build checkout form data to be submitted to SePay.
-   * notify_url: SePay sẽ POST IPN webhook về URL này khi thanh toán hoàn tất.
-   * Phải là URL public (không phải localhost khi test thật).
+   * Note: SePay gateway does NOT accept notify_url in the checkout form.
+   * IPN webhook URL must be configured directly on my.sepay.vn dashboard.
    */
   buildCheckoutFormData(params: {
     invoiceNumber: string;
@@ -64,22 +63,24 @@ export class SepayService {
     successUrl: string;
     errorUrl: string;
     cancelUrl: string;
-    notifyUrl: string;
+    paymentMethod?: string;
     customerId?: string;
   }): CheckoutFormData {
     const fields: Record<string, string> = {
       merchant: this.config.merchantId,
       currency: 'VND',
-      order_amount: String(params.amount),
+      order_amount: String(Math.round(params.amount)),
       operation: 'PURCHASE',
-      payment_method: 'all',
       order_description: params.description,
       order_invoice_number: params.invoiceNumber,
-      notify_url: params.notifyUrl,
       success_url: params.successUrl,
       error_url: params.errorUrl,
       cancel_url: params.cancelUrl,
     };
+
+    if (params.paymentMethod) {
+      fields['payment_method'] = params.paymentMethod;
+    }
 
     if (params.customerId) {
       fields['customer_id'] = params.customerId;

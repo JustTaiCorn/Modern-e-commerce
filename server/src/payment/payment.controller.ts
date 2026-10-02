@@ -6,6 +6,7 @@ import {
   Query,
   Res,
   UseGuards,
+  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
@@ -17,7 +18,7 @@ import { CreateCheckoutDto } from './dto/create-checkout.dto';
 import { SepayIpnDto } from './dto/sepay-ipn.dto';
 
 @ApiTags('Payment')
-@Controller('payment/sepay')
+@Controller({ path: 'payment/sepay', version: [VERSION_NEUTRAL, '1'] })
 export class PaymentController {
   constructor(
     private readonly paymentService: PaymentService,

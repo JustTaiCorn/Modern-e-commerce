@@ -31,6 +31,7 @@ export function useAddress(initialEffectiveDate = "2025-07-01") {
   const [error, setError] = useState<string | null>(null);
 
   const fetchProvinces = useCallback(async () => {
+    if (provinces.length > 0) return; // Đã có data, không cần fetch lại
     setIsLoadingProvinces(true);
     setError(null);
     try {
@@ -49,7 +50,7 @@ export function useAddress(initialEffectiveDate = "2025-07-01") {
     } finally {
       setIsLoadingProvinces(false);
     }
-  }, [effectiveDate]);
+  }, [effectiveDate, provinces.length]);
 
   const fetchWards = async (provinceCode: string) => {
     if (!provinceCode) return;

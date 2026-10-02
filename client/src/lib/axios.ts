@@ -69,22 +69,16 @@ privateClient.interceptors.response.use(
     originalRequest._retry = true;
 
     try {
-      // Thử POST refresh (NestJS server dùng POST), fallback GET
-      let response;
-      try {
-        response = await privateClient.post("/auth/refresh");
-      } catch {
-        response = await privateClient.get("/auth/refresh");
-      }
+      const response = await privateClient.post("/auth/refresh");
 
       const resData = response.data?.data || response.data;
-      const newAccessToken =
-        resData?.accesstoken || resData?.accessToken;
+      const newAccessToken = resData?.accesstoken || resData?.accessToken;
 
       if (!newAccessToken) {
         throw new Error("No token returned");
       }
 
+      // 1. Cập nhật localStorage để persist đúng
       const authStorage = localStorage.getItem("auth-storage");
       if (authStorage) {
         const parsed = JSON.parse(authStorage);
@@ -92,6 +86,23 @@ privateClient.interceptors.response.use(
           parsed.state.accessToken = newAccessToken;
           localStorage.setItem("auth-storage", JSON.stringify(parsed));
         }
+      }
+
+      // 2. Sync token mới vào Zustand store (tránh circular import bằng dynamic import)
+      try {
+        const { default: useAuthStore } = await import("@/stores/useAuthStore");
+        useAuthStore.getState().setAccessToken(newAccessToken);
+
+        // 3. Fetch lại user profile với token mới
+        const meRes = await privateClient.get("/auth/me", {
+          headers: { Authorization: `Bearer ${newAccessToken}` },
+        });
+        const rawUser = meRes.data?.data || meRes.data;
+        if (rawUser) {
+          useAuthStore.setState({ authUser: rawUser });
+        }
+      } catch (storeError) {
+        console.warn("Could not sync auth store after refresh:", storeError);
       }
 
       if (originalRequest.headers) {

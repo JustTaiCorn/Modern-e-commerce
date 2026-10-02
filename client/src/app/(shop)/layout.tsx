@@ -1,6 +1,6 @@
 import Header from "@/components/layouts/Header";
 import Footer from "@/components/layouts/Footer";
-import ScrollToTopAndContactButton from "@/components/common/ScrollToTop";
+import ChatWidget from "@/components/features/ai-chat/ChatWidget";
 
 export default function ShopLayout({
   children,
@@ -12,7 +12,7 @@ export default function ShopLayout({
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
-      <ScrollToTopAndContactButton />
+      <ChatWidget />
     </div>
   );
 }

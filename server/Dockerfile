@@ -11,6 +11,7 @@ RUN corepack enable pnpm
 # Copy package manifests & prisma schema để tận dụng cache layers
 COPY package.json pnpm-lock.yaml* ./
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
 # Cài đặt toàn bộ dependencies (bao gồm cả devDependencies để build)
 RUN pnpm install
