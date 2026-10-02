@@ -24,11 +24,17 @@ export const createSepayCheckout = async (
  * Submit form POST lên SePay gateway.
  * SePay yêu cầu POST form với tất cả fields (bao gồm signature),
  * KHÔNG được dùng window.location.href (GET).
+ * Mặc định target='_blank' để mở trang thanh toán trong tab mới.
  */
-export const submitSepayForm = (checkoutUrl: string, fields: Record<string, string>): void => {
+export const submitSepayForm = (
+  checkoutUrl: string,
+  fields: Record<string, string>,
+  target: string = "_blank"
+): void => {
   const form = document.createElement("form");
   form.method = "POST";
   form.action = checkoutUrl;
+  form.target = target;
   form.style.display = "none";
 
   for (const [key, value] of Object.entries(fields)) {
@@ -41,6 +47,12 @@ export const submitSepayForm = (checkoutUrl: string, fields: Record<string, stri
 
   document.body.appendChild(form);
   form.submit();
+
+  setTimeout(() => {
+    if (document.body.contains(form)) {
+      document.body.removeChild(form);
+    }
+  }, 1000);
 };
 
 export default { createSepayCheckout, submitSepayForm };

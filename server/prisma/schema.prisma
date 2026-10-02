@@ -172,6 +172,7 @@ model Product {
   reviews    Review[]
   cartItems  CartItem[]
   orderItems OrderItem[]
+  embedding  ProductEmbedding?
 
   @@index([categoryId])
   @@index([brandId])
@@ -468,4 +469,27 @@ model Coupon {
   updatedAt      DateTime  @updatedAt @db.Timestamptz
 
   @@map("coupons")
+}
+
+model ProductEmbedding {
+  id        Int      @id @default(autoincrement())
+  productId Int      @unique
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  embedding Unsupported("vector(768)")
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@map("product_embeddings")
+}
+
+model StoreDocument {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  category  String   @db.VarChar(64)
+  content   String   @db.Text
+  embedding Unsupported("vector(768)")
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@map("store_documents")
 }

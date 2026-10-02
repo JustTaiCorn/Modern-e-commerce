@@ -287,6 +287,14 @@ const useAuthStore = create<AuthStore>()(
           );
           const addresses = response.data?.data || response.data || [];
 
+          const currentAddresses = currentUser.addresses || [];
+          if (
+            currentAddresses.length === addresses.length &&
+            JSON.stringify(currentAddresses) === JSON.stringify(addresses)
+          ) {
+            return;
+          }
+
           set({
             authUser: {
               ...currentUser,

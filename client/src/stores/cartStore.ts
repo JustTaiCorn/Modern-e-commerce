@@ -156,13 +156,15 @@ export const useCartStore = create<CartState>()((set, get) => ({
       }
 
       await get().fetchCartItems(userId);
-      toast.success("Đã thêm vào giỏ hàng");
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
       const errorMessage =
         axiosError?.response?.data?.message || "Lỗi khi thêm vào giỏ hàng";
       set({ error: errorMessage, isLoading: false });
       toast.error(errorMessage);
+      throw error;
+    } finally {
+      set({ isLoading: false });
     }
   },
 
@@ -175,7 +177,6 @@ export const useCartStore = create<CartState>()((set, get) => ({
 
     set({ isLoading: true, error: null });
     try {
-      await get().clearCart();
       try {
         await privateClient.post("/cart/items", {
           variantId: variant.id,
@@ -194,6 +195,8 @@ export const useCartStore = create<CartState>()((set, get) => ({
       set({ error: errorMessage, isLoading: false });
       toast.error(errorMessage);
       throw error;
+    } finally {
+      set({ isLoading: false });
     }
   },
 
