@@ -9,12 +9,22 @@
     "build": "pnpm -r run build",
     "build:server": "pnpm --filter @ecommerce/server run build",
     "build:client": "pnpm --filter @ecommerce/client run build",
-    "lint": "pnpm -r run lint"
+    "lint": "pnpm -r run lint",
+    "test": "pnpm -r --if-present run test"
   },
   "pnpm": {
     "overrides": {
       "@types/react": "^19.0.0",
       "@types/react-dom": "^19.0.0"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "@scarf/scarf",
+      "@swc/core",
+      "argon2",
+      "prisma",
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

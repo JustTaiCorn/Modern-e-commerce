@@ -4,13 +4,61 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  # ==========================================================
+  # CI: Chạy khi có PR vào main hoặc push trực tiếp vào main
+  # ==========================================================
+  ci:
+    name: Continuous Integration (Lint, Test, Build)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @ecommerce/server prisma generate
+        env:
+          DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/ecommerce?schema=public"
+
+      - name: Run Linter
+        run: pnpm lint
+
+      - name: Run Tests
+        run: pnpm test
+
+      - name: Build Packages
+        run: pnpm build
+
+  # ==========================================================
+  # CD: Chỉ chạy khi push vào main (hoặc dispatch) VÀ sau khi CI pass
+  # ==========================================================
   build-and-deploy:
+    name: Continuous Deployment (EC2 Release)
+    needs: ci
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
@@ -93,5 +141,5 @@ jobs:
           port: ${{ secrets.EC2_PORT }}
           script: |
             sleep 10
-            curl -f http://localhost/v1/health || (echo "❌ Health check FAILED" && exit 1)
-            echo "✅ Health check passed successfully!"
+            curl -f http://localhost/v1/health || (echo " Health check FAILED" && exit 1)
+            echo "Health check passed successfully!"

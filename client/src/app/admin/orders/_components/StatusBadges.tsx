@@ -15,6 +15,11 @@ export function OrderStatusBadge({ status, className }: OrderStatusBadgeProps) {
       className: string;
     }
   > = {
+    PENDING: {
+      label: "Chờ thanh toán",
+      variant: "secondary" as const,
+      className: "bg-orange-100 text-orange-800 hover:bg-orange-200",
+    },
     NEW: {
       label: "Chờ xử lý",
       variant: "secondary" as const,
@@ -29,6 +34,16 @@ export function OrderStatusBadge({ status, className }: OrderStatusBadgeProps) {
       label: "Đang đóng gói",
       variant: "secondary" as const,
       className: "bg-purple-100 text-purple-800 hover:bg-purple-200",
+    },
+    PAID: {
+      label: "Đã thanh toán",
+      variant: "secondary" as const,
+      className: "bg-green-100 text-green-800 hover:bg-green-200",
+    },
+    PROCESSING: {
+      label: "Đang xử lý",
+      variant: "secondary" as const,
+      className: "bg-indigo-100 text-indigo-800 hover:bg-indigo-200",
     },
     SHIPPED: {
       label: "Đang giao",
