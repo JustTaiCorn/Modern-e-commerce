@@ -26,9 +26,12 @@ export function OrderTable({ orders }: OrderTableProps) {
 
   const getValidNextStatuses = (currentStatus: OrderStatus): OrderStatus[] => {
     const statusFlow: Record<OrderStatus, OrderStatus[]> = {
+      PENDING: ["PENDING", "NEW", "CANCELLED"],
       NEW: ["NEW", "CONFIRMED", "CANCELLED"],
       CONFIRMED: ["CONFIRMED", "PACKING", "CANCELLED"],
       PACKING: ["PACKING", "SHIPPED"],
+      PAID: ["PAID", "PROCESSING", "CANCELLED"],
+      PROCESSING: ["PROCESSING", "SHIPPED"],
       SHIPPED: ["SHIPPED", "DELIVERED"],
       DELIVERED: ["DELIVERED"],
       CANCELLED: ["CANCELLED"],
@@ -38,9 +41,12 @@ export function OrderTable({ orders }: OrderTableProps) {
 
   const getStatusLabel = (status: OrderStatus): string => {
     const labels: Record<OrderStatus, string> = {
+      PENDING: "Chờ thanh toán",
       NEW: "Chờ xử lý",
       CONFIRMED: "Đã xác nhận",
       PACKING: "Đang đóng gói",
+      PAID: "Đã thanh toán",
+      PROCESSING: "Đang xử lý",
       SHIPPED: "Đang giao",
       DELIVERED: "Đã giao",
       CANCELLED: "Đã hủy",
@@ -50,9 +56,12 @@ export function OrderTable({ orders }: OrderTableProps) {
 
   const getStatusSelectClass = (status: OrderStatus): string => {
     const colorClasses: Record<OrderStatus, string> = {
+      PENDING: "bg-orange-100 text-orange-800 border-orange-300",
       NEW: "bg-gray-100 text-gray-800 border-gray-300",
       CONFIRMED: "bg-yellow-100 text-yellow-800 border-yellow-300",
       PACKING: "bg-purple-100 text-purple-800 border-purple-300",
+      PAID: "bg-green-100 text-green-800 border-green-300",
+      PROCESSING: "bg-indigo-100 text-indigo-800 border-indigo-300",
       SHIPPED: "bg-cyan-100 text-cyan-800 border-cyan-300",
       DELIVERED: "bg-emerald-100 text-emerald-800 border-emerald-300",
       CANCELLED: "bg-red-100 text-red-800 border-red-300",

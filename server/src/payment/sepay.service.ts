@@ -1,54 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createHmac } from 'crypto';
-import { getSepayConfig, SepayConfig } from './sepay.config';
+import { SePayPgClient } from 'sepay-pg-node';
+import { getSepayConfig } from './sepay.config';
 
 export interface CheckoutFormData {
   checkoutUrl: string;
-  fields: Record<string, string>;
+  fields: Record<string, string | number>;
 }
 
 @Injectable()
 export class SepayService {
-  private readonly config: SepayConfig;
+  private readonly client: SePayPgClient;
+  private readonly checkoutUrl: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.config = getSepayConfig(configService);
-  }
+    const config = getSepayConfig(configService);
 
-  /**
-   * Generate HMAC-SHA256 signature for SePay checkout form.
-   * Only the specified signed fields with actual values are included in the signature.
-   */
-  generateSignature(fields: Record<string, string>): string {
-    const signedFieldNames = [
-      'merchant',
-      'operation',
-      'payment_method',
-      'order_amount',
-      'currency',
-      'order_invoice_number',
-      'order_description',
-      'customer_id',
-      'success_url',
-      'error_url',
-      'cancel_url',
-    ];
+    this.client = new SePayPgClient({
+      env: config.env,
+      merchant_id: config.merchantId,
+      secret_key: config.secretKey,
+    });
 
-    const signed: string[] = [];
-
-    for (const field of signedFieldNames) {
-      if (fields[field] !== undefined && fields[field] !== '') {
-        signed.push(`${field}=${fields[field]}`);
-      }
-    }
-
-    const dataString = signed.join(',');
-    const hmac = createHmac('sha256', this.config.secretKey)
-      .update(dataString)
-      .digest('base64');
-
-    return hmac;
+    this.checkoutUrl = this.client.checkout.initCheckoutUrl();
   }
 
   /**
@@ -63,33 +37,24 @@ export class SepayService {
     successUrl: string;
     errorUrl: string;
     cancelUrl: string;
-    paymentMethod?: string;
+    paymentMethod?: 'BANK_TRANSFER' | 'NAPAS_BANK_TRANSFER';
     customerId?: string;
   }): CheckoutFormData {
-    const fields: Record<string, string> = {
-      merchant: this.config.merchantId,
-      currency: 'VND',
-      order_amount: String(Math.round(params.amount)),
+    const fields = this.client.checkout.initOneTimePaymentFields({
       operation: 'PURCHASE',
-      order_description: params.description,
       order_invoice_number: params.invoiceNumber,
+      order_amount: Math.round(params.amount),
+      currency: 'VND',
+      order_description: params.description,
+      ...(params.paymentMethod && { payment_method: params.paymentMethod }),
+      ...(params.customerId && { customer_id: params.customerId }),
       success_url: params.successUrl,
       error_url: params.errorUrl,
       cancel_url: params.cancelUrl,
-    };
-
-    if (params.paymentMethod) {
-      fields['payment_method'] = params.paymentMethod;
-    }
-
-    if (params.customerId) {
-      fields['customer_id'] = params.customerId;
-    }
-
-    fields['signature'] = this.generateSignature(fields);
+    });
 
     return {
-      checkoutUrl: this.config.checkoutUrl,
+      checkoutUrl: this.checkoutUrl,
       fields,
     };
   }
@@ -98,10 +63,11 @@ export class SepayService {
    * Get the current SePay environment info.
    */
   getEnvironment() {
+    const config = getSepayConfig(this.configService);
     return {
-      env: this.config.env,
-      checkoutUrl: this.config.checkoutUrl,
-      apiBaseUrl: this.config.apiBaseUrl,
+      env: config.env,
+      checkoutUrl: this.checkoutUrl,
+      apiBaseUrl: config.apiBaseUrl,
     };
   }
 }

@@ -2,8 +2,11 @@ import { Product } from "./product";
 
 export type OrderStatus =
   | "NEW"
+  | "PENDING"
   | "CONFIRMED"
   | "PACKING"
+  | "PAID"
+  | "PROCESSING"
   | "SHIPPED"
   | "DELIVERED"
   | "CANCELLED";

@@ -54,7 +54,8 @@
     "pg": "^8.20.0",
     "prisma": "^7.5.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "sepay-pg-node": "^1.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -110,14 +111,5 @@
       "^(\\.{1,2}/.*)\\.js$": "$1"
     }
   },
-  "packageManager": "pnpm@10.33.0",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "@scarf/scarf",
-      "@swc/core",
-      "argon2",
-      "prisma"
-    ]
-  }
+  "packageManager": "pnpm@10.33.0"
 }
