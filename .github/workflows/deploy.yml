@@ -39,7 +39,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Client
-        run: pnpm --filter @ecommerce/server prisma generate
+        run: pnpm --filter @ecommerce/server exec prisma generate
         env:
           DATABASE_URL: "postgresql://dummy:dummy@localhost:5432/ecommerce?schema=public"
 
