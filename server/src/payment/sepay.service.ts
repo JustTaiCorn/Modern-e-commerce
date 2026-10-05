@@ -1,7 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SePayPgClient } from 'sepay-pg-node';
-import { getSepayConfig } from './sepay.config';
 
 export interface CheckoutFormData {
   checkoutUrl: string;
@@ -10,26 +9,37 @@ export interface CheckoutFormData {
 
 @Injectable()
 export class SepayService {
+  private readonly logger = new Logger(SepayService.name);
   private readonly client: SePayPgClient;
-  private readonly checkoutUrl: string;
 
   constructor(private readonly configService: ConfigService) {
-    const config = getSepayConfig(configService);
+    const env = (this.configService.get<string>('SEPAY_ENV') ?? '')
+      .trim()
+      .toLowerCase();
+    const merchantId = this.configService.get<string>('SEPAY_MERCHANT_ID');
+    const secretKey = this.configService.get<string>('SEPAY_SECRET_KEY');
+
+    // Không fallback ngầm sang sandbox nữa: thiếu hoặc sai thì báo lỗi ngay khi khởi động
+    if (env !== 'sandbox' && env !== 'production') {
+      throw new Error(
+        `SEPAY_ENV phải là "sandbox" hoặc "production", hiện tại: "${env}"`,
+      );
+    }
+    if (!merchantId || !secretKey) {
+      throw new Error('Thiếu SEPAY_MERCHANT_ID hoặc SEPAY_SECRET_KEY');
+    }
 
     this.client = new SePayPgClient({
-      env: config.env,
-      merchant_id: config.merchantId,
-      secret_key: config.secretKey,
+      env,
+      merchant_id: merchantId.trim(),
+      secret_key: secretKey.trim(),
     });
 
-    this.checkoutUrl = this.client.checkout.initCheckoutUrl();
+    this.logger.log(
+      `SePay env=${env}, checkout=${this.client.checkout.initCheckoutUrl()}`,
+    );
   }
 
-  /**
-   * Build checkout form data to be submitted to SePay.
-   * Note: SePay gateway does NOT accept notify_url in the checkout form.
-   * IPN webhook URL must be configured directly on my.sepay.vn dashboard.
-   */
   buildCheckoutFormData(params: {
     invoiceNumber: string;
     amount: number;
@@ -54,20 +64,9 @@ export class SepayService {
     });
 
     return {
-      checkoutUrl: this.checkoutUrl,
+      // Lấy URL từ SDK mỗi lần gọi, đúng như docs
+      checkoutUrl: this.client.checkout.initCheckoutUrl(),
       fields,
-    };
-  }
-
-  /**
-   * Get the current SePay environment info.
-   */
-  getEnvironment() {
-    const config = getSepayConfig(this.configService);
-    return {
-      env: config.env,
-      checkoutUrl: this.checkoutUrl,
-      apiBaseUrl: config.apiBaseUrl,
     };
   }
 }
