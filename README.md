@@ -1,205 +1,500 @@
-# 🛒 Modern E-Commerce Backend RESTful API
+# 🛒 Modern E-Commerce Platform (Full-Stack Monorepo)
 
-Hệ thống Backend RESTful API thương mại điện tử hoàn chỉnh, hiệu năng cao và bảo mật, được xây dựng theo kiến trúc Modular Monolith bằng **NestJS 11**, **TypeScript**, **PostgreSQL**, **Prisma ORM 7** và **Redis**.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/NestJS-Dark.svg" width="48" height="48" alt="NestJS" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/NextJS-Dark.svg" width="48" height="48" alt="Next.js" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/TypeScript.svg" width="48" height="48" alt="TypeScript" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/PostgreSQL-Dark.svg" width="48" height="48" alt="PostgreSQL" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Prisma.svg" width="48" height="48" alt="Prisma" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Redis-Dark.svg" width="48" height="48" alt="Redis" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/Docker.svg" width="48" height="48" alt="Docker" />
+  <img src="https://raw.githubusercontent.com/tandpfun/skill-icons/main/icons/TailwindCSS-Dark.svg" width="48" height="48" alt="TailwindCSS" />
+</p>
+
+<p align="center">
+  <strong>Nền tảng thương mại điện tử Full-stack chuẩn Production được xây dựng theo kiến trúc Monorepo hiệu năng cao.</strong><br/>
+  Tích hợp Storefront hiện đại (Next.js 16 + React 19), Hệ thống Quản trị Admin Dashboard, Backend RESTful API (NestJS 11), Trợ lý tư vấn mua sắm AI thông minh (RAG với PostgreSQL pgvector & Google Gemini), cùng quy trình thanh toán VietQR tự động.
+</p>
+
+<p align="center">
+  <a href="#-tính-năng-nổi-bật">Tính năng</a> •
+  <a href="#-kiến-trúc-hệ-thống">Kiến trúc</a> •
+  <a href="#-công-nghệ-sử-dụng">Tech Stack</a> •
+  <a href="#-cấu-trúc-dự-án">Cấu trúc Monorepo</a> •
+  <a href="#-hướng-dẫn-cài-đặt--khởi-chạy">Cài đặt & Khởi chạy</a> •
+  <a href="#-tài-khoản-thử-nghiệm">Tài khoản mẫu</a> •
+  <a href="#-tài-liệu-api-endpoints">API Docs</a>
+</p>
 
 ---
 
-## 💼 Mục Dành Riêng Cho CV / Resume (Copy & Paste)
+## 📖 Giới Thiệu Dự Án
 
-> [!TIP]
-> Bạn có thể trích xuất trực tiếp các bullet points dưới đây vào mục **Projects** hoặc **Work Experience** trong CV / Portfolio cá nhân (được viết theo công thức chuẩn ATS: *Action Verb + Task/Problem + Tech Stack + Result/Impact*).
+**Modern E-Commerce Platform** là giải pháp thương mại điện tử hoàn chỉnh, giải quyết các bài toán kỹ thuật thực tế trong các hệ thống bán lẻ trực tuyến quy mô lớn:
 
-### 🇻🇳 Bản Tiếng Việt:
-* **Kiến trúc & Công nghệ:** Thiết kế và xây dựng hệ thống backend e-commerce hoàn chỉnh với NestJS 11, TypeScript, PostgreSQL (Prisma ORM) và Redis theo kiến trúc Modular Monolith và Clean Architecture.
-* **Xác thực & Bảo mật (RBAC):** Triển khai hệ thống xác thực kép JWT (Access/Refresh Token) qua HTTP-Only Cookie kết hợp cơ chế phân quyền dựa trên vai trò (Role-Based Access Control - RBAC). Tích hợp Redis Throttler chống tấn công Brute-force lúc đăng nhập.
-* **Catalog & Biến thể phức tạp:** Xây dựng mô hình dữ liệu sản phẩm đa biến thể (Attributes: Color, Size, SKU, giá và tồn kho riêng); hỗ trợ upload ảnh streaming lên Cloudinary.
-* **Tìm kiếm, Lọc & Phân trang:** Phát triển API tìm kiếm full-text đa trường, bộ lọc đa tiêu chí (danh mục, thương hiệu, khoảng giá biến thể, tình trạng tồn kho) và sắp xếp linh hoạt theo chuẩn phân trang tối ưu.
-* **Xử lý Đơn hàng & Concurrency:** Thiết kế cơ chế đặt hàng trong Prisma `$transaction`, ngăn chặn race-condition khi trừ kho đồng thời (atomic deduction) và giải quyết triệt để vấn đề Transaction Deadlock bằng kỹ thuật sắp xếp khóa ID tài nguyên.
-* **Thanh toán tự động:** Tích hợp cổng thanh toán SePay (VietQR), xử lý Webhook IPN thời gian thực với cơ chế xác thực chữ ký số bảo mật, tự động kích hoạt trạng thái đơn hàng.
-* **Bộ nhớ đệm (Caching):** Áp dụng mô hình Cache-Aside với Redis cho các truy vấn đọc nhiều (danh mục, chi tiết sản phẩm), kết hợp cơ chế tự động xóa/làm mới cache khi dữ liệu thay đổi.
-* **Tài liệu & DevOps:** Chuẩn hóa toàn bộ phản hồi API bằng NestJS Interceptor; tự động hóa tài liệu OpenAPI/Swagger 3.0 qua Nest CLI Plugin; container hóa ứng dụng và cơ sở dữ liệu bằng Docker & Docker Compose.
+- **Customer Storefront:** Trải nghiệm mua sắm mượt mà, tối ưu SEO, hỗ trợ phân loại danh mục đa tầng, tìm kiếm toàn văn, lọc thuộc tính linh hoạt và sản phẩm đa biến thể (Matrix Variants: Màu sắc, Kích cỡ, SKU độc lập).
+- **Hệ Thống Quản Trị (Admin Portal):** Bộ công cụ quản trị tập trung dành cho vận hành: biểu đồ trực quan hóa doanh thu, quản lý tồn kho real-time, xử lý quy trình đơn hàng nhiều bước, quản lý mã giảm giá và phân quyền nhân viên theo vai trò (RBAC).
+- **Trợ Lý Mua Sắm AI (RAG Assistant):** Chatbot hỗ trợ 24/7 nhúng trực tiếp, áp dụng kỹ thuật RAG (Retrieval-Augmented Generation) kết hợp Vector Search (`pgvector`) và Google Gemini để tư vấn sản phẩm, giải đáp chính sách bảo hành, đổi trả, chọn size theo thời gian thực.
+- **Backend Chuyên Sâu & Xử Lý Đồng Thời:** Giải quyết triệt để bài toán **Race Condition** và **Transaction Deadlock** khi nhiều người cùng đặt hàng đồng thời thông qua Prisma `$transaction`, trừ kho nguyên tử (`Atomic Stock Deduction`), và cơ chế khóa tài nguyên theo thứ tự tăng dần (`Sorted Resource Locking`).
 
 ---
 
-### 🇬🇧 English Version (ATS-Friendly):
-* **Architecture & Core:** Designed and engineered a high-performance e-commerce RESTful API using **NestJS 11**, **TypeScript**, **PostgreSQL (Prisma ORM 7)**, and **Redis** adhering to Modular Monolith and Clean Architecture principles.
-* **Authentication & Security:** Implemented dual-token JWT authentication (Access & Refresh tokens) via HTTP-Only cookies with Role-Based Access Control (RBAC). Mitigated brute-force attacks by integrating a Redis-backed login rate limiter.
-* **Product Catalog & Variant System:** Modeled complex product variants (supporting dynamic attributes: Color, Size, individual SKUs, pricing, and stock tracking) with buffer-streaming multi-image uploads to Cloudinary.
-* **Search, Filtering & Pagination:** Engineered an optimized product discovery API supporting case-insensitive multi-field search, relational multi-facet filtering (categories, brands, variant price ranges, stock status), dynamic sorting, and offset pagination.
-* **Order Processing & Concurrency Control:** Architected a resilient order placement workflow using Prisma `$transaction` with atomic stock deductions to prevent inventory overselling; eliminated database transaction deadlocks via sorted resource ID locking.
-* **Automated Payments:** Integrated SePay (VietQR) payment gateway, handling real-time IPN webhooks with cryptographic signature verification for automated order status transitions.
-* **High-Throughput Caching:** Implemented Cache-Aside pattern via Redis for read-heavy operations (categories and product details), reducing database load and enforcing automated cache invalidation upon entity mutations.
-* **Documentation & DevOps:** Standardized global API response contracts via NestJS Interceptors; auto-generated interactive OpenAPI 3.0 (Swagger) specifications; containerized services using Docker and Docker Compose.
+## 🏗️ Kiến Trúc Hệ Thống
+
+Dự án áp dụng mô hình **Monorepo** được quản lý bởi `pnpm workspaces`, phân tách rõ ràng giữa các tầng ứng dụng:
+
+```mermaid
+flowchart TB
+    subgraph ClientLayer["🖥️ Frontend Client (Next.js 16 + React 19)"]
+        Storefront["🛍️ Customer Storefront\n(Shop, Cart, Checkout, Profile)"]
+        AdminUI["📊 Admin Management Portal\n(Dashboard, Inventory, Orders, RBAC)"]
+        AIChatWidget["🤖 AI Shopping Assistant Widget\n(Contextual RAG Chat)"]
+    end
+
+    subgraph Gateway["🌐 Reverse Proxy / Gateway"]
+        Nginx["Nginx Reverse Proxy\n(Port 8888 / Routing & SSL)"]
+    end
+
+    subgraph BackendLayer["⚙️ Backend RESTful API (NestJS 11 - Port 3000)"]
+        AuthModule["Auth & RBAC\n(JWT, Argon2, Throttler)"]
+        ProductModule["Catalog & Variants\n(Multi-Attribute Matrix)"]
+        OrderModule["Orders & Concurrency\n(Prisma Transaction & Locking)"]
+        PaymentModule["Payment Integration\n(SePay VietQR Webhook, Stripe)"]
+        AIModule["AI & RAG Service\n(Gemini 1.5 & Vector Retrieval)"]
+    end
+
+    subgraph DataLayer["💾 Data & Cache Storage"]
+        Postgres[("🐘 PostgreSQL 16\n- Relational Data\n- pgvector (768-dim Embeddings)")]
+        Redis[("⚡ Redis 7\n- Cache-Aside (Catalog & Products)\n- Brute-Force Rate Limiting")]
+    end
+
+    subgraph ExternalServices["☁️ External Services"]
+        Cloudinary["☁️ Cloudinary\n(Buffer-Streaming Image CDN)"]
+        SePay["💳 SePay Gateway\n(VietQR Instant IPN Webhook)"]
+        GeminiAPI["🧠 Google Gemini API\n(Embeddings & Generation)"]
+        SMTP["✉️ Gmail SMTP\n(Verification & Order Mails)"]
+    end
+
+    ClientLayer -->|HTTP / WebSocket| Nginx
+    Nginx -->|/v1/*| BackendLayer
+    Nginx -->|/api/docs| BackendLayer
+    Nginx -->|/*| ClientLayer
+
+    BackendLayer --> Postgres
+    BackendLayer --> Redis
+    BackendLayer --> Cloudinary
+    BackendLayer --> SePay
+    BackendLayer --> GeminiAPI
+    BackendLayer --> SMTP
+```
 
 ---
 
 ## 🛠️ Công Nghệ Sử Dụng (Tech Stack)
 
-| Lớp (Layer) | Công nghệ | Mục đích sử dụng |
+### 1. Frontend Client (`client/`)
+| Công nghệ | Phiên bản | Vai trò & Mục đích |
 | :--- | :--- | :--- |
-| **Framework & Ngôn ngữ** | **NestJS 11**, **TypeScript 5**, **Node.js** | Nền tảng backend module hóa, Dependency Injection, type-safety |
-| **Database & ORM** | **PostgreSQL**, **Prisma ORM 7** (`@prisma/adapter-pg`) | Lưu trữ dữ liệu quan hệ, type-safe queries, migration tự động |
-| **Caching & In-Memory** | **Redis** (`ioredis`) | Cache-aside cho danh mục/sản phẩm, Rate Limiter chống brute-force |
-| **Bảo mật & Auth** | **Passport.js**, **JWT**, **Argon2**, **Helmet**, **Cookie-Parser** | Băm mật khẩu cao cấp, mã hóa token, chống tấn công web phổ biến |
-| **Third-Party Services** | **Cloudinary**, **SePay**, **Nodemailer** | Quản lý media đám mây, cổng thanh toán VietQR, gửi mail kích hoạt/reset mật khẩu |
-| **Validation & Docs** | **class-validator**, **class-transformer**, **Swagger (OpenAPI 3.0)** | Tự động validate & cast kiểu tham số, sinh tài liệu API trực quan tại `/api/docs` |
-| **DevOps & Container** | **Docker**, **Docker Compose** | Đóng gói môi trường đồng nhất (App, PostgreSQL, Redis) |
+| **Next.js** | `16.3.x` | Framework App Router, Server & Client Components, Route Handlers, SEO tối ưu |
+| **React** | `19.3.x` | Thư viện UI hiện đại nhất, hỗ trợ Actions, Transitions & Concurrent Mode |
+| **TypeScript** | `5.x` | Đảm bảo tính nhất quán kiểu dữ liệu từ Server tới Client |
+| **Tailwind CSS** | `v4.0.0` | CSS framework thế hệ mới với hiệu năng biên dịch vượt trội |
+| **Radix UI / Shadcn** | Mới nhất | Hệ thống UI headless primitives dễ dàng tùy biến, chuẩn Accessibility (a11y) |
+| **TanStack Query** | `v5.x` | Quản lý Server State, đồng bộ dữ liệu ngầm, caching và optimistic updates |
+| **Zustand** | `v5.x` | Client State Management nhẹ, hiệu quả cho giỏ hàng và UI preferences |
+| **Framer Motion / Motion**| `v12.x` | Tạo animation mượt mà cho trải nghiệm duyệt web và modal tương tác |
+| **Recharts & Chart.js** | Mới nhất | Trực quan hóa dữ liệu biểu đồ kinh doanh trong Admin Dashboard |
+| **React Hook Form + Zod**| Mới nhất | Quản lý form hiệu năng cao, validate dữ liệu 2 chiều chặt chẽ |
+
+### 2. Backend Server (`server/`)
+| Công nghệ | Phiên bản | Vai trò & Mục đích |
+| :--- | :--- | :--- |
+| **NestJS** | `11.0.x` | Nền tảng backend chuẩn Enterprise theo kiến trúc Modular Monolith & Clean Code |
+| **PostgreSQL & pgvector**| `16.x` | Cơ sở dữ liệu quan hệ mạnh mẽ, tích hợp vector similarity search 768 chiều |
+| **Prisma ORM** | `7.5.x` | Type-safe Database Client kết hợp `@prisma/adapter-pg` cho kết nối tối ưu |
+| **Redis** | `7.x` | Cache-Aside cho dữ liệu đọc nhiều; Rate-limiter trượt ngăn chặn tấn công dò mật khẩu |
+| **Argon2** | `0.44.x` | Thuật toán băm mật khẩu bảo mật hàng đầu (đoạt giải Password Hashing Competition) |
+| **Passport & JWT** | Mới nhất | Cơ chế xác thực kép Access Token & Refresh Token qua HTTP-Only Cookie an toàn |
+| **Swagger / OpenAPI** | `11.x` | Tự động sinh tài liệu API tương tác tại `/api/docs` |
+| **Cloudinary SDK** | Mới nhất | Quản lý và biến đổi hình ảnh tải lên dạng memory stream trực tiếp |
+
+### 3. AI & RAG Engine
+| Công nghệ | Mục đích sử dụng |
+| :--- | :--- |
+| **Google Generative AI** | Tích hợp Google Gemini (`@google/generative-ai`) tạo câu trả lời tự nhiên |
+| **text-embedding-004** | Sinh vector đặc trưng 768 chiều từ dữ liệu catalog sản phẩm & văn bản chính sách |
+| **PostgreSQL pgvector** | Lưu trữ và truy vấn tương đồng cosine (`<=>`) với độ trễ thấp ngay trên cùng database |
+| **Grounding Context** | Cơ chế chống hallucination, trích xuất chính xác nguồn dữ liệu của cửa hàng |
 
 ---
 
-## 🌟 Chi Tiết Các Phân Hệ Chức Năng (Core Modules)
+## 🌟 Tính Năng Nổi Bật
 
-### 1. Phân Hệ Xác Thực & Phân Quyền (Auth & RBAC)
-- **Đăng ký & Đăng nhập:** Băm mật khẩu bằng thuật toán **Argon2** an toàn hơn bcrypt.
-- **Cơ chế Dual-Token:** Cấp Access Token ngắn hạn và Refresh Token dài hạn lưu trong HTTP-Only Cookie chống XSS.
-- **Phân quyền (RBAC):** Decorator `@Roles(Role.ADMIN, Role.USER)` kết hợp `RolesGuard` bảo vệ các endpoint nhạy cảm.
-- **Chống Brute-force:** Tích hợp `LoginThrottlerService` dựa trên Redis để khóa tạm thời IP/tài khoản khi đăng nhập sai nhiều lần liên tiếp.
-- **Email Service:** Tích hợp Nodemailer gửi mã xác thực tài khoản và link khôi phục mật khẩu qua SMTP.
+### 🛍️ 1. Trải Nghiệm Khách Hàng (Customer Storefront)
+- **Danh mục & Thương hiệu:** Cấu trúc phân tầng danh mục cha - con (Nested Categories), kết hợp slug thân thiện SEO.
+- **Tìm kiếm & Bộ lọc linh hoạt (Faceted Search):** Tìm kiếm theo tên/mô tả sản phẩm, lọc theo danh mục, thương hiệu, khoảng giá biến thể (`minPrice` - `maxPrice`), trạng thái còn hàng (`inStock`), sắp xếp theo mới nhất hoặc giá tăng/giảm.
+- **Hệ thống Biến thể Sản phẩm phức tạp:** Mô hình Product Attribute Matrix (Color, Size) với từng SKU có giá, số lượng tồn kho và hình ảnh riêng biệt; cập nhật tồn kho tức thì khi chọn cấu hình.
+- **Giỏ hàng bền vững (Persistent Cart):** Đồng bộ giỏ hàng theo tài khoản người dùng, kiểm tra tồn kho thời gian thực trước khi thêm hoặc tăng số lượng.
+- **Mã giảm giá (Coupons / Vouchers):** Áp dụng mã khuyến mãi theo điều kiện giá trị đơn hàng tối thiểu và hạn mức sử dụng.
+- **Sổ địa chỉ & Giao hàng:** Quản lý nhiều địa chỉ nhận hàng (Tỉnh/Thành phố, Quận/Huyện, Phường/Xã, Địa chỉ chi tiết), thiết lập địa chỉ mặc định.
+- **Thanh toán đa dạng:**
+  - **VietQR SePay (Tự động):** Tạo mã QR động kèm nội dung thanh toán riêng cho từng đơn hàng; hệ thống tự động xác nhận `PAID` qua Webhook IPN thời gian thực.
+  - **Stripe / PayPal:** Thanh toán quốc tế qua thẻ tín dụng và cổng ví điện tử.
+  - **COD:** Thanh toán khi nhận hàng.
+- **Lịch sử đơn hàng & Đánh giá:** Xem chi tiết lộ trình vận chuyển, xuất/in hóa đơn PDF (`InvoiceTemplate`), gửi đánh giá sao (1-5★) và bình luận sản phẩm sau khi mua.
 
-### 2. Phân Hệ Sản Phẩm & Biến Thể (Products & Variants Catalog)
-- **Quản lý biến thể đa tầng:** Hỗ trợ sản phẩm có nhiều biến thể tổ hợp từ các thuộc tính (Màu sắc, Kích thước, Dung lượng...), mỗi biến thể có SKU, giá (`price`) và tồn kho (`countInStock`) độc lập.
-- **Upload đa ảnh:** Sử dụng luồng `Readable Stream` tải ảnh trực tiếp lên Cloudinary từ buffer bộ nhớ mà không cần lưu file tạm vào ổ cứng server.
-- **Bộ lọc, Tìm kiếm & Phân trang nâng cao:**
-  - Tìm kiếm từ khóa theo tên hoặc mô tả (`name`, `description`).
-  - Lọc theo danh mục (`categoryId` hoặc `categorySlug`).
-  - Lọc theo thương hiệu (`brandId` hoặc `brandSlug`).
-  - Lọc theo khoảng giá biến thể (`minPrice`, `maxPrice`).
-  - Lọc sản phẩm còn hàng (`inStock=true`).
-  - Sắp xếp: Mới nhất (`createdAt`) hoặc theo giá (`price` tăng/giảm dần).
-  - Phân trang kiểm soát `page` và `limit` (giới hạn tối đa 50 item/trang).
+---
 
-### 3. Phân Hệ Danh Mục & Thương Hiệu (Categories & Brands)
-- Quản lý đầy đủ CRUD Danh mục và Thương hiệu.
-- Tự động tạo URL-friendly slug bằng tiện ích `slugify`.
-- Tích hợp **Redis Caching** (TTL 24h) phục vụ menu/header với tốc độ phản hồi tính bằng mili-giây, tự động xóa cache khi có thao tác thêm/sửa/xóa.
+### 🤖 2. Trợ Lý Mua Sắm AI (AI Shopping Assistant & RAG)
+- **Tư vấn thông minh:** Khung chat AI thời gian thực hỗ trợ khách hàng tìm kiếm sản phẩm phù hợp với nhu cầu, ngân sách, phong cách thời trang.
+- **Tra cứu chính sách tức thì:** Tự động giải đáp chính xác về chính sách đổi trả (7 ngày), biểu phí vận chuyển (Freeship từ 500k), bảo hành sản phẩm chính hãng (6 tháng), và hướng dẫn chọn size.
+- **Kiến trúc RAG không nhầm lẫn:** 
+  1. Khi người dùng đặt câu hỏi, hệ thống tạo vector câu hỏi qua model `text-embedding-004`.
+  2. Truy vấn top-K vector tương đồng nhất trong các bảng `product_embeddings` và `store_documents` bằng toán tử Cosine Similarity trên PostgreSQL.
+  3. Ghép ngữ cảnh thực tế vào prompt và gửi tới Gemini LLM để trả về câu trả lời chính xác, kèm link sản phẩm trực tiếp.
 
-### 4. Phân Hệ Giỏ Hàng (Shopping Cart)
-- Lưu trữ giỏ hàng bền vững trong database gắn liền với tài khoản người dùng.
-- Thêm sản phẩm theo từng biến thể cụ thể, cập nhật số lượng, tự động kiểm tra tồn kho trước khi thêm.
-- Tự động đồng bộ và tính toán tổng tiền tạm tính.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer as Khách hàng
+    participant Client as Frontend (Chat Widget)
+    participant Server as NestJS (AI Assistant)
+    participant VectorDB as PostgreSQL (pgvector)
+    participant Gemini as Google Gemini API
 
-### 5. Phân Hệ Đơn Hàng & Xử Lý Đồng Thời (Orders & Concurrency Control)
-- **Database Transaction:** Toàn bộ quá trình tạo đơn hàng và trừ kho được bọc trong `prisma.$transaction`.
-- **Phòng ngừa Deadlock:** Sắp xếp danh sách `variantId` theo thứ tự tăng dần trước khi thực thi truy vấn cập nhật, loại bỏ nguy cơ deadlock khi nhiều người cùng đặt các sản phẩm giống nhau cùng lúc.
-- **Atomic Stock Deduction:** Trừ tồn kho bằng điều kiện `countInStock: { gte: requiredQty }`. Nếu tồn kho không đủ, giao dịch lập tức rollback (Fail-Fast) kèm thông báo chi tiết mã SKU bị thiếu hàng.
+    Customer->>Client: "Tôi cao 1m75 nặng 65kg, có mẫu áo sơ mi nào vừa và chính sách đổi trả thế nào?"
+    Client->>Server: POST /v1/ai-assistant/chat { message }
+    Server->>Gemini: Generate Embedding (text-embedding-004)
+    Gemini-->>Server: Vector 768 chiều
+    Server->>VectorDB: Truy vấn Cosine Distance (<=>) tìm Products & Policy Docs
+    VectorDB-->>Server: Top K sản phẩm phù hợp + Chính sách liên quan
+    Server->>Gemini: Prompt Kèm Dữ Liệu Ngữ Cảnh (Grounding Context)
+    Gemini-->>Server: Câu trả lời tư vấn hoàn chỉnh + Gợi ý sản phẩm
+    Server-->>Client: Phản hồi định dạng Markdown kèm Metadata sản phẩm
+    Client-->>Customer: Hiển thị câu trả lời & Card sản phẩm có thể bấm xem ngay
+```
 
-### 6. Phân Hệ Thanh Toán Tự Động (SePay VietQR Gateway)
-- Khởi tạo giao diện mã QR VietQR động theo đơn hàng với nội dung chuyển khoản tự động.
-- Tiếp nhận Webhook IPN (Instant Payment Notification) từ SePay khi khách hàng chuyển khoản thành công.
-- Kiểm tra tính toàn vẹn và xác thực chữ ký số (`signature verification`) trước khi cập nhật trạng thái đơn hàng sang `PAID`.
+---
 
-### 7. Tối Ưu Hóa & Chuẩn Hóa Hệ Thống (System Polish)
-- **TransformInterceptor:** Mọi phản hồi thành công từ API đều được chuẩn hóa theo format:
-  ```json
-  {
-    "statusCode": 200,
-    "success": true,
-    "data": { ... },
-    "timestamp": "2026-09-15T10:00:00.000Z"
-  }
+### 📊 3. Hệ Thống Quản Trị Chuyên Sâu (Admin Portal)
+- **Bảng điều khiển kinh doanh (Dashboard):** Thống kê doanh thu theo thời gian thực, tổng số lượng đơn hàng, sản phẩm bán chạy, lượng khách hàng đăng ký mới với biểu đồ trực quan.
+- **Quản lý Catalog Sản phẩm:**
+  - Thêm/sửa/xóa sản phẩm, cấu hình thuộc tính Màu sắc (Color picker Hex) và Size (S, M, L, XL, XXL...).
+  - Tạo tổ hợp biến thể, gán SKU, giá bán lẻ và tồn kho ban đầu cho từng biến thể.
+  - Tải lên nhiều hình ảnh cùng lúc qua Cloudinary (chọn ảnh đại diện, sắp xếp thứ tự).
+- **Kiểm soát Tồn kho (Stock Management):** Theo dõi số lượng tồn của từng biến thể theo SKU, cảnh báo sắp hết hàng.
+- **Vận hành Đơn hàng (Order Management):**
+  - Quản lý quy trình vòng đời đơn hàng theo trạng thái:  
+    `PENDING` ➔ `CONFIRMED` ➔ `PACKING` ➔ `PAID` ➔ `PROCESSING` ➔ `SHIPPED` ➔ `DELIVERED` *(hoặc `CANCELLED`)*.
+  - Xem chi tiết phương thức thanh toán, thông tin giao hàng, log thanh toán webhook.
+  - Tạo và in hóa đơn xuất kho chuẩn hóa.
+- **Quản lý Mã giảm giá (Coupons):** Tạo mã khuyến mãi, thiết lập số lần dùng tối đa, hạn mức cho từng người dùng, ngày bắt đầu và kết thúc.
+- **Quản lý Tài khoản & Phân quyền (RBAC):** Danh sách người dùng, kích hoạt/khóa tài khoản, thêm nhân viên (`staff`) và phân quyền vai trò.
+
+---
+
+### 🛡️ 4. Kỹ Thuật Xử Lý Backend Chuyên Sâu
+
+#### ⚡ Kiểm soát Concurrency & Phòng Chống Overselling (Race Condition)
+Trong kịch bản nhiều khách hàng cùng thanh toán món hàng cuối cùng tại một thời điểm:
+- Toàn bộ quy trình tạo đơn và trừ tồn kho được bao bọc trong một **Prisma `$transaction`**.
+- Trừ kho nguyên tử với điều kiện kiểm tra trực tiếp tại database:
+  ```typescript
+  // Trừ tồn kho có điều kiện (Atomic Deduction)
+  await tx.productVariant.update({
+    where: {
+      id: item.variantId,
+      countInStock: { gte: item.quantity }, // Bắt buộc tồn kho hiện tại >= số lượng mua
+    },
+    data: {
+      countInStock: { decrement: item.quantity },
+    },
+  });
   ```
-- **Swagger Documentation:** Tự động tạo tài liệu OpenAPI trực quan tại `/api/docs`.
+- Nếu tồn kho không đủ, câu lệnh cập nhật lập tức thất bại, kích hoạt cơ chế **Rollback toàn bộ giao dịch (Fail-Fast)** và trả về thông báo lỗi chi tiết mã SKU bị thiếu hàng.
+
+#### 🔒 Triệt Tiêu Nguy Cơ Deadlock Bằng Thuật Toán Sắp Xếp ID Khóa
+Khi 2 khách hàng đồng thời đặt các giỏ hàng chứa cùng các sản phẩm A và B nhưng theo thứ tự ngược nhau (User 1: A rồi B; User 2: B rồi A), việc khóa hàng theo thứ tự ngẫu nhiên sẽ dẫn tới Database Deadlock.
+- **Giải pháp:** Hệ thống tự động sắp xếp mảng `variantId` theo thứ tự tăng dần (`ASC`) trước khi thực hiện cập nhật kho trong transaction:
+  ```typescript
+  const sortedItems = [...cartItems].sort((a, b) => a.variantId - b.variantId);
+  ```
+- Việc luôn thu nạp khóa (Lock Acquisition) theo một thứ tự duy nhất đảm bảo không bao giờ xảy ra tình trạng Circular Wait, triệt tiêu hoàn toàn Transaction Deadlock.
+
+#### 🛡️ Bảo Mật Hai Lớp Dual-Token & Redis Throttler
+- **Dual-Token Auth:** Access Token có thời hạn ngắn (15 phút) dùng cho các request thông thường; Refresh Token có thời hạn dài (7 ngày) được lưu trữ an toàn trong **HTTP-Only Cookie**, ngăn chặn hoàn toàn tấn công đánh cắp token qua XSS.
+- **Redis Login Throttler:** Giám sát tần suất đăng nhập theo IP và username. Khi vượt quá ngưỡng cho phép (ví dụ: quá 5 lần thất bại liên tiếp), tài khoản/IP bị tạm khóa trong khung thời gian quy định nhằm ngăn chặn tấn công Brute-force.
+- **Cache-Aside Caching:** Các danh mục (`/categories`) và thông tin sản phẩm đọc nhiều được lưu cache trên Redis với TTL tối ưu. Mọi thao tác thêm/sửa/xóa (`Mutation`) đều kích hoạt cơ chế xóa cache (`Cache Invalidation`) tự động để dữ liệu luôn nhất quán.
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt & Khởi Chạy (Quick Start)
+## 📁 Cấu Trúc Dự Án (Monorepo)
 
-### 1. Yêu cầu môi trường
-- Node.js >= 20
-- pnpm (khuyên dùng) hoặc npm / yarn
-- PostgreSQL & Redis (hoặc sử dụng Docker Compose)
+```text
+Modern_ecommerce/
+├── client/                          # 🌐 Ứng dụng Frontend (Next.js 16 + React 19)
+│   ├── public/                      # Static assets, icons, fonts
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── (auth)/              # Luồng đăng nhập, đăng ký, quên mật khẩu
+│   │   │   ├── (shop)/              # Giao diện mua sắm khách hàng (Home, Cart, Products, Checkout...)
+│   │   │   └── admin/               # Cổng quản trị Admin (Dashboard, Products, Orders, Stock, Users...)
+│   │   ├── components/
+│   │   │   ├── common/              # Navbar, Footer, Header, Breadcrumbs
+│   │   │   ├── features/            # AI Chatbot widget, Image galleries
+│   │   │   └── ui/                  # Shadcn / Radix primitives (Button, Dialog, Input, Table...)
+│   │   ├── hooks/                   # Custom React hooks (useCart, useDebounce, useAuth...)
+│   │   ├── services/                # Tầng gọi API Backend (Axios client)
+│   │   ├── stores/                  # Global state với Zustand (cartStore, userStore...)
+│   │   └── types/                   # TypeScript interfaces & DTOs
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── server/                          # ⚙️ Ứng dụng Backend API (NestJS 11)
+│   ├── prisma/
+│   │   ├── schema.prisma            # Mô hình dữ liệu PostgreSQL & pgvector definitions
+│   │   └── seed.ts                  # Script khởi tạo tài khoản, catalog & quyền mặc định
+│   ├── scripts/
+│   │   └── seed-knowledge-base.ts   # Script vector hóa chính sách shop cho AI RAG
+│   ├── src/
+│   │   ├── ai-assistant/            # Phân hệ AI: Gemini, Vector Store, pgvector search
+│   │   ├── auth/                    # Phân hệ Auth: JWT dual-token, RBAC, Guards
+│   │   ├── products/                # Phân hệ Sản phẩm & Ma trận biến thể (Color/Size/SKU)
+│   │   ├── orders/                  # Phân hệ Đơn hàng: Xử lý giao dịch & kiểm soát concurrency
+│   │   ├── payment/                 # Phân hệ Thanh toán: SePay VietQR webhook, Stripe
+│   │   ├── cart/                    # Phân hệ Giỏ hàng người dùng
+│   │   ├── categories/              # Phân hệ Danh mục (kèm Redis Cache-Aside)
+│   │   ├── brands/                  # Phân hệ Thương hiệu
+│   │   ├── coupons/                 # Phân hệ Mã giảm giá
+│   │   ├── dashboard/               # Phân hệ Thống kê số liệu Admin
+│   │   ├── inventories/             # Phân hệ Quản lý tồn kho
+│   │   ├── redis/                   # Module kết nối Redis & Throttler
+│   │   ├── mail/                    # Module gửi email SMTP qua Nodemailer
+│   │   ├── cloudinary/              # Module streaming upload media
+│   │   └── main.ts                  # Entry point: Helmet, Cors, Swagger, Interceptors
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── reverse_proxy/                   # 🌐 Cấu hình Nginx reverse proxy cho production
+│   ├── nginx_release.conf           # Điều hướng /v1/ sang backend, / sang frontend
+│   └── Dockerfile
+│
+├── docker-compose.yml               # Môi trường chạy Local DB (PostgreSQL pgvector, Redis)
+├── docker-compose-build.yaml        # Môi trường chạy trọn gói Production Services
+├── package.json                     # Monorepo Root Script orchestration (pnpm)
+└── README.md
+```
 
-### 2. Cài đặt Dependencies
+---
+
+## 🚀 Hướng Dẫn Cài Đặt & Khởi Chạy
+
+### 1. Yêu cầu hệ thống
+- **Node.js**: Phiên bản `>= 20.x`
+- **pnpm**: Phiên bản `>= 9.x` hoặc `10.x` *(Khuyên dùng)*
+- **Docker & Docker Compose**: Đã cài đặt và đang chạy
+
+---
+
+### 2. Cài đặt Dependencies Monorepo
+
+Clone repository và cài đặt các gói phụ thuộc tại thư mục gốc:
+
 ```bash
+git clone https://github.com/JustTaiCorn/Modern-e-commerce.git
+cd Modern_ecommerce
+
+# Cài đặt toàn bộ packages cho cả root, client và server
 pnpm install
 ```
 
-### 3. Cấu hình Biến Môi Trường (`.env`)
-Tạo file `.env` tại thư mục gốc với các thông số mẫu:
+---
+
+### 3. Thiết lập Biến Môi Trường (`.env`)
+
+#### a. Cấu hình Backend (`server/.env`)
+Tạo file `server/.env` dựa theo mẫu dưới đây:
+
 ```env
 PORT=3000
 NODE_ENV=development
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+ALLOWED_ORIGINS=http://localhost:3001,http://localhost:3000
 
-# Database & Cache
-DATABASE_URL="postgresql://postgres:123456@localhost:5432/ecommerce?schema=public"
+# PostgreSQL Database (kèm extension pgvector)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ecommerce?schema=public"
+
+# Redis Cache & Throttler
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
-# JWT Secrets
-JWT_ACCESS_SECRET=your_jwt_access_secret_key_here
-JWT_REFRESH_SECRET=your_jwt_refresh_secret_key_here
+# JWT Secret Keys
+JWT_ACCESS_SECRET=your_jwt_access_secret_key_at_least_32_characters
+JWT_REFRESH_SECRET=your_jwt_refresh_secret_key_at_least_32_characters
 
-# Cloudinary
+# Google Gemini API Key (phục vụ tính năng AI Shopping Assistant RAG)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Cloudinary (Quản lý hình ảnh sản phẩm)
 CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 
-# Mailer (Gmail SMTP)
+# Cổng thanh toán VietQR SePay
+SEPAY_MERCHANT_ID=your_merchant_id
+SEPAY_SECRET_KEY=your_sepay_secret_key
+SEPAY_ENV=sandbox
+
+# Gửi email (Gmail SMTP)
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USER=your_email@gmail.com
 MAIL_PASSWORD=your_app_password
-MAIL_FROM="Modern E-Commerce <noreply@ecommerce.com>"
-
-# SePay Payment Gateway
-SEPAY_MERCHANT_ID=your_merchant_id
-SEPAY_SECRET_KEY=your_sepay_secret_key
-SEPAY_ENV=sandbox
+MAIL_FROM="Modern E-Commerce <noreply@ecommerce.vn>"
 ```
 
-### 4. Đồng bộ Database Schema & Khởi tạo dữ liệu
-```bash
-# Đẩy schema lên database
-npx prisma db push
+#### b. Cấu hình Frontend (`client/.env.local`)
+Tạo file `client/.env.local`:
 
-# Chạy seed dữ liệu quyền và tài khoản admin mặc định
-pnpm run prisma:seed
+```env
+# URL kết nối tới Backend API
+NEXT_PUBLIC_API_URL=http://localhost:3000/v1
+PORT=3001
+
+# Tùy chọn bổ sung (nếu dùng)
+OPENAI_API_KEY=
+STRIPE_SECRET_KEY=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ```
-
-### 5. Khởi chạy ứng dụng
-
-**Chạy môi trường phát triển (Development):**
-```bash
-pnpm run start:dev
-```
-
-**Hoặc chạy toàn bộ qua Docker Compose (PostgreSQL, Redis, NestJS):**
-```bash
-docker compose up -d --build
-```
-
-Truy cập Swagger API Documentation tại: **`http://localhost:3000/api/docs`**
 
 ---
 
-## 📋 Danh Sách API Endpoints Chính
+### 4. Khởi Chạy Database & Redis Bằng Docker
 
-| Module | Method | Endpoint | Quyền hạn | Mô tả |
+Sử dụng Docker Compose để khởi chạy dịch vụ PostgreSQL (tích hợp sẵn extension `pgvector`) và Redis:
+
+```bash
+# Khởi động PostgreSQL và Redis chạy nền
+docker compose up postgres redis -d
+```
+
+---
+
+### 5. Khởi Tạo Cơ Sở Dữ Liệu & Seed Dữ Liệu Mẫu
+
+Chạy các lệnh sau để tạo bảng, tạo tài khoản mẫu và nạp dữ liệu tri thức AI:
+
+```bash
+# Đẩy schema Prisma lên database
+pnpm --filter @ecommerce/server exec prisma db push
+
+# Khởi tạo dữ liệu mẫu (Roles, User, Admin, Danh mục, Sản phẩm đa biến thể)
+pnpm --filter @ecommerce/server run prisma:seed
+
+# Khởi tạo Vector Knowledge Base cho AI Chatbot (Vectorize chính sách cửa hàng)
+pnpm --filter @ecommerce/server run seed:ai
+```
+
+---
+
+### 6. Khởi Chạy Ứng Dụng (Development)
+
+Bạn có thể chạy đồng thời cả Frontend và Backend từ thư mục gốc:
+
+```bash
+# Chạy đồng thời cả Client và Server
+pnpm dev
+```
+
+Hoặc chạy từng phân hệ độc lập trong từng terminal riêng:
+
+```bash
+# Terminal 1: Chạy Backend NestJS (cổng 3000)
+pnpm dev:server
+
+# Terminal 2: Chạy Frontend Next.js (cổng 3001)
+pnpm dev:client
+```
+
+Sau khi khởi chạy thành công:
+- **🛍️ Giao diện Khách hàng (Storefront):** [http://localhost:3001](http://localhost:3001)
+- **📊 Giao diện Quản trị (Admin Portal):** [http://localhost:3001/admin](http://localhost:3001/admin)
+- **⚙️ Backend API Base URL:** [http://localhost:3000/v1](http://localhost:3000/v1)
+- **📚 Tài liệu Swagger API:** [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+
+---
+
+### 7. Khởi Chạy Trọn Gói Bằng Docker Compose (Production Setup)
+
+Để triển khai trọn gói toàn bộ hệ thống gồm Nginx Gateway, Next.js Frontend, NestJS Backend, PostgreSQL pgvector và Redis:
+
+```bash
+docker compose -f docker-compose-build.yaml up --build -d
+```
+Hệ thống sẽ chạy qua Nginx Reverse Proxy tại cổng `http://localhost:8888`.
+
+---
+
+## 🔑 Tài Khoản Thử Nghiệm
+
+Dữ liệu seed mẫu cung cấp sẵn các tài khoản với mật khẩu mặc định là: **`123456`**
+
+| Vai trò | Email đăng nhập | Mật khẩu | Quyền hạn & Chức năng |
+| :--- | :--- | :--- | :--- |
+| **Quản trị viên (Admin)** | `admin@atino.vn` | `123456` | Toàn quyền quản trị hệ thống, duyệt đơn, chỉnh kho, cấu hình danh mục & khuyến mãi |
+| **Nhân viên (Staff)** | `staff@atino.vn` | `123456` | Quản lý xử lý đơn hàng, cập nhật tình trạng giao nhận |
+| **Khách hàng (User)** | `user@atino.vn` | `123456` | Tài khoản VIP, có sẵn sổ địa chỉ, lịch sử đơn hàng và giỏ hàng mẫu |
+
+---
+
+## 📋 Tài Liệu API & Endpoints
+
+Tài liệu tương tác chuẩn **OpenAPI 3.0 (Swagger)** được tự động phát sinh và có thể trải nghiệm trực tiếp tại:  
+👉 **`http://localhost:3000/api/docs`**
+
+### Bảng Tổng Hợp Một Số Endpoints Chính:
+
+| Nhóm chức năng | Phương thức | Đường dẫn API | Phân quyền | Mô tả chức năng |
 | :--- | :--- | :--- | :--- | :--- |
-| **Auth** | `POST` | `/api/v1/auth/register` | Public | Đăng ký tài khoản người dùng mới |
-| | `POST` | `/api/v1/auth/login` | Public | Đăng nhập (có Redis rate-limit chống brute-force) |
-| | `POST` | `/api/v1/auth/refresh` | Public | Làm mới Access Token qua Refresh Token cookie |
-| | `POST` | `/api/v1/auth/logout` | Authenticated | Đăng xuất, hủy session |
-| **Products** | `GET` | `/api/v1/products` | Public | Tìm kiếm, lọc (danh mục, brand, giá, tồn kho), sắp xếp & phân trang |
-| | `GET` | `/api/v1/products/:id` | Public | Chi tiết sản phẩm (kèm biến thể, đánh giá, cache Redis 1h) |
-| | `POST` | `/api/v1/products` | Admin | Tạo sản phẩm mới kèm danh sách variants |
-| | `PATCH` | `/api/v1/products/:id` | Admin | Cập nhật sản phẩm & tự động xóa cache |
-| | `DELETE` | `/api/v1/products/:id` | Admin | Xóa sản phẩm & tự động xóa cache |
-| **Categories** | `GET` | `/api/v1/categories` | Public | Danh sách danh mục (cache Redis 24h) |
-| | `POST` | `/api/v1/categories` | Admin | Tạo danh mục mới |
-| **Brands** | `GET` | `/api/v1/brands` | Public | Danh sách thương hiệu (cache Redis 24h) |
-| | `POST` | `/api/v1/brands` | Admin | Tạo thương hiệu mới |
-| **Cart** | `GET` | `/api/v1/cart` | Authenticated | Lấy giỏ hàng hiện tại của user |
-| | `POST` | `/api/v1/cart/items` | Authenticated | Thêm sản phẩm biến thể vào giỏ |
-| | `DELETE` | `/api/v1/cart/items/:id` | Authenticated | Xóa sản phẩm khỏi giỏ |
-| **Orders** | `POST` | `/api/v1/orders` | Authenticated | Tạo đơn hàng (chạy `$transaction` trừ kho an toàn) |
-| | `GET` | `/api/v1/orders/my-orders` | Authenticated | Danh sách đơn hàng cá nhân |
-| | `GET` | `/api/v1/orders/:id` | Authenticated | Chi tiết đơn hàng |
-| **Payment** | `POST` | `/api/v1/payment/checkout/:orderId`| Authenticated | Khởi tạo thanh toán VietQR với SePay |
-| | `POST` | `/api/v1/payment/webhook` | Public | Nhận IPN tự động từ SePay với xác thực chữ ký |
+| **Authentication** | `POST` | `/v1/auth/register` | Public | Đăng ký tài khoản người dùng mới |
+| | `POST` | `/v1/auth/login` | Public | Đăng nhập (bảo vệ bằng Redis rate-limit) |
+| | `POST` | `/v1/auth/refresh` | Public | Cấp mới Access Token thông qua Refresh Token cookie |
+| | `POST` | `/v1/auth/logout` | Authenticated | Đăng xuất và hủy phiên làm việc |
+| **AI Assistant** | `POST` | `/v1/ai-assistant/chat` | Public | Gửi câu hỏi tư vấn mua sắm & chính sách cho AI RAG |
+| **Products** | `GET` | `/v1/products` | Public | Danh sách sản phẩm kèm bộ lọc, tìm kiếm và phân trang |
+| | `GET` | `/v1/products/:id` | Public | Chi tiết sản phẩm kèm danh sách biến thể (Cache Redis) |
+| | `POST` | `/v1/products` | Admin / Staff | Tạo sản phẩm mới kèm cấu hình ma trận biến thể |
+| | `PATCH` | `/v1/products/:id` | Admin / Staff | Cập nhật thông tin sản phẩm và tự động xóa cache |
+| | `DELETE` | `/v1/products/:id` | Admin | Xóa sản phẩm khỏi hệ thống |
+| **Categories** | `GET` | `/v1/categories` | Public | Lấy cây danh mục phân tầng (Cache Redis 24h) |
+| | `POST` | `/v1/categories` | Admin | Thêm danh mục mới |
+| **Cart** | `GET` | `/v1/cart` | Authenticated | Lấy giỏ hàng đồng bộ của người dùng |
+| | `POST` | `/v1/cart/items` | Authenticated | Thêm sản phẩm theo biến thể SKU vào giỏ |
+| | `DELETE` | `/v1/cart/items/:id` | Authenticated | Xóa sản phẩm khỏi giỏ hàng |
+| **Orders** | `POST` | `/v1/orders` | Authenticated | Tạo đơn hàng (chạy transaction trừ kho an toàn) |
+| | `GET` | `/v1/orders/my-orders`| Authenticated | Lịch sử mua hàng của người dùng hiện tại |
+| | `GET` | `/v1/orders/:id` | Authenticated | Thông tin chi tiết đơn hàng |
+| | `PATCH` | `/v1/orders/:id/status`| Admin / Staff | Chuyển đổi trạng thái đơn hàng trong quy trình |
+| **Payment** | `POST` | `/v1/payment/checkout/:orderId`| Authenticated| Tạo thông tin chuyển khoản VietQR SePay |
+| | `POST` | `/v1/payment/webhook` | Public | Tiếp nhận IPN Webhook tự động từ SePay với xác thực chữ ký |
+| **Coupons** | `GET` | `/v1/coupons` | Public | Danh sách mã giảm giá đang kích hoạt |
+| | `POST` | `/v1/coupons` | Admin | Tạo mã giảm giá mới |
+| **Dashboard** | `GET` | `/v1/dashboard/metrics` | Admin | Thống kê doanh thu, đơn hàng và các chỉ số kinh doanh |
+
+---
+
+## 📜 Các Scripts Thường Dùng (Scripts Reference)
+
+| Lệnh | Ý nghĩa |
+| :--- | :--- |
+| `pnpm dev` | Khởi chạy đồng thời cả Frontend và Backend ở môi trường development |
+| `pnpm dev:server` | Chỉ chạy Backend NestJS ở chế độ watch mode |
+| `pnpm dev:client` | Chỉ chạy Frontend Next.js |
+| `pnpm build` | Biên dịch toàn bộ các package trong monorepo |
+| `pnpm lint` | Kiểm tra định dạng và lỗi cú pháp ESLint trên toàn bộ dự án |
+| `pnpm test` | Khởi chạy các bộ kiểm thử đơn vị (Unit Tests) |
 
 ---
 
 ## 📄 Bản Quyền (License)
-Dự án được phân phối dưới giấy phép [MIT License](LICENSE).
+
+Dự án được phân phối dưới giấy phép **[MIT License](LICENSE)**. Tự do sử dụng, chỉnh sửa và phát triển tiếp cho mục đích học tập hoặc thương mại.
